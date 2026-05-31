@@ -183,15 +183,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
     </div>
     <div class="prog-wrap"><div class="prog-fill prog-fill-blue" id="snap-bar" style="width:0%"></div></div>
     <div style="font-size:11px;color:var(--text-2);margin-top:4px;text-align:right" id="snap-label">0 / 2,250 cal</div>
-    <button class="btn btn-amber" style="margin-top:10px" onclick="goScreen('nutrition')"><i class="ti ti-camera" aria-hidden="true"></i> Log a meal photo</button>
+    <button class="btn btn-amber" style="margin-top:10px" onclick="goScreen('nutrition')"><i class="ti ti-plus" aria-hidden="true"></i> Log meals & track macros</button>
   </div>
 </div>
 
 <!-- WORKOUT -->
 <div id="screen-workout" class="screen">
   <div class="page-title">Today's workout</div>
-  <div class="page-sub">Phase 1 · Foundation</div>
+  <div class="page-sub" id="workout-sub">Phase 1 · Foundation</div>
 
+  <div class="section-label">Phase</div>
+  <div class="toggle-row" id="phase-toggle">
+    <button class="toggle-btn active" id="phase-1-btn" onclick="selectPhase('1',this)">Phase 1</button>
+    <button class="toggle-btn" id="phase-2-btn" onclick="selectPhase('2',this)">Phase 2</button>
+    <button class="toggle-btn" id="phase-3-btn" onclick="selectPhase('3',this)">Phase 3</button>
+    <button class="toggle-btn" id="phase-4-btn" onclick="selectPhase('4',this)">Phase 4</button>
+  </div>
+
+  <div class="section-label">Day</div>
   <div class="toggle-row">
     <button class="toggle-btn active" id="day-a-btn" onclick="selectDay('A',this)">Day A — Upper</button>
     <button class="toggle-btn" id="day-b-btn" onclick="selectDay('B',this)">Day B — Lower</button>
@@ -251,7 +260,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
 <!-- NUTRITION -->
 <div id="screen-nutrition" class="screen">
   <div class="page-title">Nutrition</div>
-  <div class="page-sub">Meal plan + photo estimator</div>
+  <div class="page-sub">Per-meal macro targets + tracking</div>
 
   <div class="toggle-row">
     <button class="toggle-btn you-on" id="nut-you-btn" onclick="setNutUser('you',this)">You</button>
@@ -260,39 +269,49 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
     <button class="toggle-btn" id="nut-rest-btn" onclick="setNutDay('rest',this)">Rest day</button>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px" id="nut-totals"></div>
-
   <div class="card">
-    <div class="card-title"><i class="ti ti-camera" aria-hidden="true" style="margin-right:4px"></i>AI photo estimator</div>
-    <input type="file" id="photo-inp" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
-    <img id="photo-preview" class="photo-preview" alt="Meal photo">
-    <div class="photo-drop" id="photo-drop" onclick="document.getElementById('photo-inp').click()">
-      <i class="ti ti-camera-plus" aria-hidden="true" style="font-size:32px;color:var(--text-2);display:block;margin-bottom:8px"></i>
-      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px">Tap to take or upload a photo</div>
-      <div style="font-size:12px;color:var(--text-2)">Claude will estimate calories and macros</div>
-    </div>
-    <div id="photo-results" style="display:none">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
-        <div class="metric" style="text-align:center"><div class="metric-label">Calories</div><div style="font-size:16px;font-weight:700;color:var(--text)" id="r-cal">—</div></div>
-        <div class="metric" style="text-align:center"><div class="metric-label">Protein</div><div style="font-size:16px;font-weight:700;color:var(--text)" id="r-prot">—</div></div>
-        <div class="metric" style="text-align:center"><div class="metric-label">Carbs</div><div style="font-size:16px;font-weight:700;color:var(--text)" id="r-carb">—</div></div>
-        <div class="metric" style="text-align:center"><div class="metric-label">Fat</div><div style="font-size:16px;font-weight:700;color:var(--text)" id="r-fat">—</div></div>
-      </div>
-    </div>
-    <div class="ai-box" id="ai-box"></div>
+    <div class="card-title">Daily total target</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px" id="nut-totals"></div>
+    <div class="section-label">Logged so far today</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px" id="nut-logged"></div>
+    <div class="section-label">Remaining</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px" id="nut-remaining"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">Today's food log</div>
+    <div class="card-title"><i class="ti ti-droplet" aria-hidden="true" style="margin-right:4px"></i>Water</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:22px;font-weight:600;color:var(--text)"><span id="water-oz">0</span> <span style="font-size:13px;color:var(--text-2)">/ <span id="water-goal">90</span> oz</span></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-blue" style="width:auto;margin-bottom:0;padding:8px 12px" onclick="addWater(8)">+8 oz</button>
+        <button class="btn btn-blue" style="width:auto;margin-bottom:0;padding:8px 12px" onclick="addWater(16)">+16 oz</button>
+        <button class="btn" style="width:auto;margin-bottom:0;padding:8px 10px" onclick="addWater(-8)">−8</button>
+      </div>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill prog-fill-blue" id="water-bar" style="width:0%"></div></div>
+    <div style="font-size:11px;color:var(--text-2);margin-top:5px">Goal is half your bodyweight in ounces — drink more on training days</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Quick add</div>
+    <div style="font-size:12px;color:var(--text-2);margin-bottom:10px">Tap a food to log a standard serving instantly</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="quick-add-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Log custom food</div>
     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
       <input type="text" class="input" id="f-name" placeholder="Food item" style="flex:2;margin-bottom:0;min-width:100px">
-      <input type="number" class="input" id="f-cal" placeholder="Cal" style="flex:1;margin-bottom:0;min-width:55px">
-      <input type="number" class="input" id="f-prot" placeholder="P(g)" style="flex:1;margin-bottom:0;min-width:55px">
+      <input type="number" class="input" id="f-cal" placeholder="Cal" style="flex:1;margin-bottom:0;min-width:50px">
+      <input type="number" class="input" id="f-prot" placeholder="P" style="flex:1;margin-bottom:0;min-width:42px">
+      <input type="number" class="input" id="f-carb" placeholder="C" style="flex:1;margin-bottom:0;min-width:42px">
+      <input type="number" class="input" id="f-fat" placeholder="F" style="flex:1;margin-bottom:0;min-width:42px">
       <button class="btn btn-green" style="width:auto;margin-bottom:0;padding:10px 14px" onclick="addFood()">Add</button>
     </div>
     <div id="food-log-list"></div>
   </div>
 
+  <div class="section-label" style="padding:0 4px">Meal plan — tap a meal for its targets & recipe</div>
   <div id="meal-plan-cards"></div>
 </div>
 
@@ -368,7 +387,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
     <div class="ing-row"><span style="color:var(--text-2)">Lower compound (Phase 1)</span><span>2 min</span></div>
     <div class="ing-row"><span style="color:var(--text-2)">Heavy lower (Phase 2+)</span><span>2–3 min</span></div>
     <div class="ing-row"><span style="color:var(--text-2)">Explosive / power sets</span><span>3 min</span></div>
-    <div style="background:var(--gray-bg);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text-2);margin-top:10px;line-height:1.6">If RPE jumps more than 1 point between sets, add 30 more seconds of rest.</div>
+    <div style="background:var(--gray-bg);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text-2);margin-top:10px;line-height:1.6">If RPE jumps more than 1 point between sets, add 30 more seconds of rest. The timer now keeps running accurately even if your screen locks — it beeps and vibrates when done.</div>
   </div>
 </div>
 
@@ -426,71 +445,288 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
 </nav>
 
 <script>
-const DAYS_DATA = {
-  A:{sections:[
-    {label:'Warm-up',mins:15,exercises:[
-      {name:'Foam roll thoracic spine',rx:'5 min',sets:0,rest:0,cues:['Roll slowly up the mid-back, pausing 5–10 sec on tight spots','Arms crossed over chest to open the shoulder blades'],vid:'thoracic+spine+foam+roll+form+tutorial'},
-      {name:'Band pull-apart',rx:'2×15',sets:2,rest:0,cues:['Palms up, arms straight — pull band apart and squeeze shoulder blades','Wrists neutral, elbows slightly soft throughout'],vid:'band+pull+apart+form+tutorial'},
-      {name:'Cat-cow + hip circles',rx:'2×10',sets:2,rest:0,cues:['Breathe in as you arch, breathe out as you round — slow and deliberate','Feel the spine articulate segment by segment'],vid:'cat+cow+hip+circles+mobility+tutorial'},
-      {name:'Rotator cuff activation',rx:'2×15 each side',sets:2,rest:0,cues:['Elbow pinned to side, rotate outward against light band resistance','Never skip — significantly reduces shoulder injury risk'],vid:'rotator+cuff+activation+band+external+rotation'}
-    ]},
-    {label:'Superset A — Incline press + Cable row',mins:18,exercises:[
-      {name:'A1 · Incline dumbbell press',rx:'4×10–12 · RPE 7',sets:4,rest:90,cues:['3-sec descent, 1-sec pause at chest — elbows at 45° from torso','Press straight up, wrists stacked over elbows throughout'],vid:'incline+dumbbell+press+form+tutorial'},
-      {name:'A2 · Cable row (neutral grip)',rx:'4×10–12 · RPE 7 · rest 90s',sets:4,rest:90,cues:['Drive elbows straight back — pause 1 sec when handles reach chest','Control the return to full extension — don\'t let the cable pull you'],vid:'cable+row+neutral+grip+form+tutorial'}
-    ]},
-    {label:'Superset B — Shoulder press + Lat pulldown',mins:15,exercises:[
-      {name:'B1 · Dumbbell shoulder press',rx:'3×12 · RPE 7',sets:3,rest:90,cues:['Neutral grip, core braced — press without locking elbows at top','Ribs down, glutes slightly squeezed — don\'t lean back'],vid:'dumbbell+shoulder+press+form+tutorial'},
-      {name:'B2 · Lat pulldown (wide grip)',rx:'3×12 · RPE 7 · rest 90s',sets:3,rest:90,cues:['Lean back slightly, drive elbows down toward hips — not backward','Stretch fully at the top between reps'],vid:'lat+pulldown+form+tutorial'}
-    ]},
-    {label:'Superset C — Arms + Rear delt',mins:14,exercises:[
-      {name:'C1 · Cable face pull',rx:'3×15 · RPE 6',sets:3,rest:60,cues:['Cable at forehead height, elbows high and wide — spread rope at face','Never skip — your shoulder health insurance every session'],vid:'cable+face+pull+form+tutorial+shoulder+health'},
-      {name:'C2 · Tricep pushdown',rx:'3×15 · RPE 6',sets:3,rest:60,cues:['Elbows pinned to sides — spread rope at full extension','If elbows drift forward, reduce the weight'],vid:'tricep+rope+pushdown+form+tutorial'},
-      {name:'C3 · Dumbbell curl',rx:'3×15 · RPE 6 · rest 60s',sets:3,rest:60,cues:['Supinate (rotate palm up) as you curl — increases peak contraction','No swinging — if you\'re swinging, reduce the weight'],vid:'dumbbell+bicep+curl+form+tutorial'}
-    ]},
-    {label:'Core finisher',mins:13,exercises:[
-      {name:'Dead bug',rx:'3×8 each side · rest 45s',sets:3,rest:45,cues:['Lower back flat to floor at all times — if it lifts, stop and reset','Move slowly — exhale as you lower opposite arm and leg'],vid:'dead+bug+exercise+core+form+tutorial'},
-      {name:'Pallof press',rx:'3×12 each side · rest 45s',sets:3,rest:45,cues:['Brace before pressing — hold 1 sec at full extension','The cable tries to rotate you — resisting that is the whole exercise'],vid:'pallof+press+anti+rotation+core+tutorial'},
-      {name:'RKC plank',rx:'3×30s · rest 45s',sets:3,rest:45,cues:['Squeeze everything — fists, glutes, quads, abs — as hard as possible','Breathe steadily — this is intense isometric effort'],vid:'RKC+plank+form+tutorial+core'}
-    ]},
-    {label:'Cool-down',mins:15,exercises:[
-      {name:'Chest doorway stretch',rx:'2×30s each side',sets:0,rest:0,cues:['Arm at 90°, lean gently forward — breathe into the stretch','Sustained gentle stretch beats aggressive pulling'],vid:'chest+doorway+stretch+cool+down'},
-      {name:'Lat stretch (kneeling)',rx:'2×30s each side',sets:0,rest:0,cues:['Extend arms on bench, sit hips back toward heels — breathe deeply','Let gravity do the work — no strain, just a long stretch'],vid:'lat+stretch+kneeling+cool+down+tutorial'},
-      {name:'Neck + shoulder mobility',rx:'5 min',sets:0,rest:0,cues:['Gentle half-circles ear to shoulder — never full backward neck rolls','Finish with 5 deep breaths, shoulders drop on each exhale'],vid:'neck+shoulder+mobility+cool+down'}
-    ]}
-  ]},
-  B:{sections:[
-    {label:'Warm-up',mins:15,exercises:[
-      {name:'Foam roll glutes + quads',rx:'5 min',sets:0,rest:0,cues:['Pause 5–10 sec on tight spots — cross ankle over knee for glutes','Roll slowly — don\'t rush through'],vid:'foam+roll+glutes+quads+tutorial'},
-      {name:'Glute bridge',rx:'2×15',sets:2,rest:0,cues:['Drive through heels, squeeze glutes at top — hold 2 seconds','If glutes don\'t fire here, the lower back compensates during heavy work'],vid:'glute+bridge+activation+form+tutorial'},
-      {name:'Hip flexor stretch',rx:'2×30s each side',sets:0,rest:0,cues:['Tuck tailbone under (posterior pelvic tilt) to deepen the stretch','Tight hip flexors are a top cause of lower back pain'],vid:'kneeling+hip+flexor+stretch+tutorial'},
-      {name:'Lateral band walk',rx:'2×12 steps each side',sets:2,rest:0,cues:['Band around ankles, slight knee bend — stay low and controlled','Activates glute medius — critical for knee stability during squats'],vid:'lateral+band+walk+glute+activation+tutorial'},
-      {name:'Bodyweight squat',rx:'2×10 — movement prep',sets:2,rest:0,cues:['Knees track over toes, chest tall — rehearsal, not exercise','Pause 1 sec at bottom to open the hips before loading'],vid:'bodyweight+squat+form+tutorial+movement+prep'}
-    ]},
-    {label:'Superset A — Goblet squat + Leg curl',mins:20,exercises:[
-      {name:'A1 · Goblet squat',rx:'4×10–12 · RPE 7',sets:4,rest:120,cues:['Dumbbell at chest, 3-sec descent — elbows inside knees at the bottom','Drive through the full foot — don\'t rise onto your toes'],vid:'goblet+squat+proper+form+tutorial'},
-      {name:'A2 · Seated leg curl',rx:'4×12 · RPE 7 · rest 2 min',sets:4,rest:120,cues:['Full range of motion — pause briefly at peak contraction','Control the return — don\'t let the weight crash down'],vid:'seated+leg+curl+form+tutorial'}
-    ]},
-    {label:'Superset B — Romanian deadlift + Leg press',mins:20,exercises:[
-      {name:'B1 · Romanian deadlift',rx:'4×10 · RPE 7–8',sets:4,rest:120,cues:['Hinge from hips with soft knee bend — bar stays close to legs','Feel hamstring stretch, not lower back — reduce range if it\'s your back'],vid:'romanian+deadlift+form+tutorial+hamstring'},
-      {name:'B2 · Leg press',rx:'4×12 · RPE 7 · rest 2 min',sets:4,rest:120,cues:['Feet shoulder-width mid-platform — knees track over toes','Stop just before locking knees — keep tension on quads throughout'],vid:'leg+press+form+tutorial+proper+foot+placement'}
-    ]},
-    {label:'Accessory — Abductors + Calves',mins:10,exercises:[
-      {name:'Cable hip abduction',rx:'3×15 each side · rest 60s',sets:3,rest:60,cues:['Slight forward hip lean — control the return, don\'t let cable snap back','Strengthens glute medius — important for knee and lower back health'],vid:'cable+hip+abduction+form+tutorial'},
-      {name:'Standing calf raise',rx:'3×20 · rest 60s',sets:3,rest:60,cues:['Full range — heel below step going down, full extension at the top','Slow and deliberate — most people rush and get nothing from these'],vid:'standing+calf+raise+form+tutorial+full+range'}
-    ]},
-    {label:'Core finisher',mins:12,exercises:[
-      {name:'Dead bug',rx:'3×8 each side · rest 45s',sets:3,rest:45,cues:['Lower back flat to floor — move slowly, exhale on each rep','If your back lifts, stop and reduce the range of motion'],vid:'dead+bug+exercise+core+form+tutorial'},
-      {name:'Pallof press (side on)',rx:'3×12 each side · rest 45s',sets:3,rest:45,cues:['Brace before pressing — resist the pull, that\'s the whole exercise','Exhale as you extend, hold 1 second before returning'],vid:'pallof+press+anti+rotation+core+tutorial'},
-      {name:'Suitcase carry',rx:'3×30m · rest 45s',sets:3,rest:45,cues:['One heavy dumbbell — walk tall, look like you\'re carrying nothing','Core resists the lateral pull — one of the best lower back strengtheners'],vid:'suitcase+carry+core+stability+form+tutorial'}
-    ]},
-    {label:'Cool-down',mins:15,exercises:[
-      {name:'Pigeon pose (or figure-4)',rx:'2×45s each side',sets:0,rest:0,cues:['Breathe into the hip — relax a little deeper on each exhale','Figure-4 on your back is gentler if pigeon is too intense'],vid:'pigeon+pose+figure+4+hip+stretch+tutorial'},
-      {name:'Standing quad stretch',rx:'2×30s each side',sets:0,rest:0,cues:['Tuck pelvis under (tailbone down) to significantly increase the stretch','Hold a wall if balance is an issue — stability first'],vid:'standing+quad+stretch+cool+down'},
-      {name:'Child\'s pose',rx:'2 min',sets:0,rest:0,cues:['Arms extended, breathe into the lower back — feel it decompress','Gently reverses spinal compression from heavy lifting'],vid:'childs+pose+yoga+lower+back+relief'},
-      {name:'Supine knee-to-chest',rx:'1 min each side',sets:0,rest:0,cues:['Hug one knee gently toward chest — don\'t force it','Great final movement to close every lower body session'],vid:'supine+knee+to+chest+lower+back+stretch'}
-    ]}
-  ]}
+const PHASE_INFO = {
+  '1':{name:'Phase 1 · Foundation',months:'Months 1–2',focus:'Form mastery + fat loss'},
+  '2':{name:'Phase 2 · Strength',months:'Month 3',focus:'Heavier loads, lower reps'},
+  '3':{name:'Phase 3 · Golf power base',months:'Months 4–5',focus:'Rotational power + stability'},
+  '4':{name:'Phase 4 · Golf peak',months:'Month 6',focus:'Explosive power + speed'}
 };
+
+const PHASES = {
+  '1':{
+    A:{sections:[
+      {label:"Warm-up",mins:15,exercises:[
+        {"name":"Foam roll thoracic spine","rx":"5 min","sets":0,"rest":0,"cues":["Roll slowly up the mid-back, pausing 5–10 sec on tight spots","Arms crossed over chest to open the shoulder blades"],"vid":"thoracic+spine+foam+roll+form+tutorial"},
+        {"name":"Band pull-apart","rx":"2×15","sets":2,"rest":0,"cues":["Palms up, arms straight — pull band apart and squeeze shoulder blades","Wrists neutral, elbows slightly soft throughout"],"vid":"band+pull+apart+form+tutorial"},
+        {"name":"Cat-cow + hip circles","rx":"2×10","sets":2,"rest":0,"cues":["Breathe in as you arch, breathe out as you round — slow and deliberate","Feel the spine articulate segment by segment"],"vid":"cat+cow+hip+circles+mobility+tutorial"},
+        {"name":"Rotator cuff activation","rx":"2×15 each side","sets":2,"rest":0,"cues":["Elbow pinned to side, rotate outward against light band resistance","Never skip — significantly reduces shoulder injury risk"],"vid":"rotator+cuff+activation+band+external+rotation"}
+      ]},
+      {label:"Superset A — Incline press + Cable row",mins:18,exercises:[
+        {"name":"A1 · Incline dumbbell press","rx":"4×10–12 · RPE 7","sets":4,"rest":90,"cues":["3-sec descent, 1-sec pause at chest — elbows at 45° from torso","Press straight up, wrists stacked over elbows throughout"],"vid":"incline+dumbbell+press+form+tutorial"},
+        {"name":"A2 · Cable row (neutral grip)","rx":"4×10–12 · RPE 7 · rest 90s","sets":4,"rest":90,"cues":["Drive elbows straight back — pause 1 sec when handles reach chest","Control the return to full extension — don't let the cable pull you"],"vid":"cable+row+neutral+grip+form+tutorial"}
+      ]},
+      {label:"Superset B — Shoulder press + Lat pulldown",mins:14,exercises:[
+        {"name":"B1 · Dumbbell shoulder press","rx":"3×12 · RPE 7","sets":3,"rest":90,"cues":["Neutral grip, core braced — press without locking elbows at top","Ribs down, glutes slightly squeezed — don't lean back"],"vid":"dumbbell+shoulder+press+form+tutorial"},
+        {"name":"B2 · Lat pulldown (wide grip)","rx":"3×12 · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["Lean back slightly, drive elbows down toward hips — not backward","Stretch fully at the top between reps"],"vid":"lat+pulldown+form+tutorial"}
+      ]},
+      {label:"Superset C — Arms + Rear delt",mins:16,exercises:[
+        {"name":"C1 · Cable face pull","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Cable at forehead height, elbows high and wide — spread rope at face","Never skip — your shoulder health insurance every session"],"vid":"cable+face+pull+form+tutorial+shoulder+health"},
+        {"name":"C2 · Tricep pushdown","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Elbows pinned to sides — spread rope at full extension","If elbows drift forward, reduce the weight"],"vid":"tricep+rope+pushdown+form+tutorial"},
+        {"name":"C3 · Dumbbell curl","rx":"3×15 · RPE 6 · rest 60s","sets":3,"rest":60,"cues":["Supinate (rotate palm up) as you curl — increases peak contraction","No swinging — if you're swinging, reduce the weight"],"vid":"dumbbell+bicep+curl+form+tutorial"}
+      ]},
+      {label:"Core finisher",mins:14,exercises:[
+        {"name":"Dead bug","rx":"3×8 each side · rest 45s","sets":3,"rest":45,"cues":["Lower back flat to floor at all times — if it lifts, stop and reset","Move slowly — exhale as you lower opposite arm and leg"],"vid":"dead+bug+exercise+core+form+tutorial"},
+        {"name":"Pallof press","rx":"3×12 each side · rest 45s","sets":3,"rest":45,"cues":["Brace before pressing — hold 1 sec at full extension","The cable tries to rotate you — resisting that is the whole exercise"],"vid":"pallof+press+anti+rotation+core+tutorial"},
+        {"name":"RKC plank","rx":"3×30s · rest 45s","sets":3,"rest":45,"cues":["Squeeze everything — fists, glutes, quads, abs — as hard as possible","Breathe steadily — this is intense isometric effort"],"vid":"RKC+plank+form+tutorial+core"}
+      ]},
+      {label:"Mobility & core block",mins:12,exercises:[
+        {"name":"Thoracic rotation (open book)","rx":"2×10 each side","sets":2,"rest":0,"cues":["Lie on side, open the top arm across to the floor — rotate from the mid-back","Improves rotation for pressing and golf alike"],"vid":"open+book+thoracic+rotation+mobility"},
+        {"name":"Hanging knee raise","rx":"3×12","sets":3,"rest":45,"cues":["Hang from the bar, raise knees with control — no swinging","Builds lower-ab strength and decompresses the spine"],"vid":"hanging+knee+raise+core+form"},
+        {"name":"Side plank","rx":"3×30s each side","sets":3,"rest":30,"cues":["Stack the hips, brace hard — straight line head to heels","Trains the obliques and lateral core stability"],"vid":"side+plank+form+tutorial+core"}
+      ]},
+      {label:"Conditioning finisher — pick one or both",mins:14,exercises:[
+        {"name":"Option 1 · Rower intervals","rx":"8 rounds: 30s hard / 30s easy","sets":0,"rest":0,"cues":["Upper-body driven so your legs stay fresh — drive with the arms and back","Hard efforts at ~80%, easy efforts truly easy to recover"],"vid":"rowing+machine+intervals+technique"},
+        {"name":"Option 2 · Incline treadmill walk","rx":"12–15 min · 10–12% incline","sets":0,"rest":0,"cues":["Brisk pace, no holding the rails — great low-impact fat-loss work","Keeps the heart rate in the fat-burning zone without taxing recovery"],"vid":"incline+treadmill+walk+fat+loss"}
+      ]},
+      {label:"Cool-down",mins:15,exercises:[
+        {"name":"Chest doorway stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Arm at 90°, lean gently forward — breathe into the stretch","Sustained gentle stretch beats aggressive pulling"],"vid":"chest+doorway+stretch+cool+down"},
+        {"name":"Lat stretch (kneeling)","rx":"2×30s each side","sets":0,"rest":0,"cues":["Extend arms on bench, sit hips back toward heels — breathe deeply","Let gravity do the work — no strain, just a long stretch"],"vid":"lat+stretch+kneeling+cool+down+tutorial"},
+        {"name":"Neck + shoulder mobility","rx":"5 min","sets":0,"rest":0,"cues":["Gentle half-circles ear to shoulder — never full backward neck rolls","Finish with 5 deep breaths, shoulders drop on each exhale"],"vid":"neck+shoulder+mobility+cool+down"}
+      ]}
+    ]},
+    B:{sections:[
+      {label:"Warm-up",mins:15,exercises:[
+        {"name":"Foam roll glutes + quads","rx":"5 min","sets":0,"rest":0,"cues":["Pause 5–10 sec on tight spots — cross ankle over knee for glutes","Roll slowly — don't rush through"],"vid":"foam+roll+glutes+quads+tutorial"},
+        {"name":"Glute bridge","rx":"2×15","sets":2,"rest":0,"cues":["Drive through heels, squeeze glutes at top — hold 2 seconds","If glutes don't fire here, the lower back compensates during heavy work"],"vid":"glute+bridge+activation+form+tutorial"},
+        {"name":"Hip flexor stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Tuck tailbone under (posterior pelvic tilt) to deepen the stretch","Tight hip flexors are a top cause of lower back pain"],"vid":"kneeling+hip+flexor+stretch+tutorial"},
+        {"name":"Lateral band walk","rx":"2×12 steps each side","sets":2,"rest":0,"cues":["Band around ankles, slight knee bend — stay low and controlled","Activates glute medius — critical for knee stability during squats"],"vid":"lateral+band+walk+glute+activation+tutorial"},
+        {"name":"Bodyweight squat","rx":"2×10 — movement prep","sets":2,"rest":0,"cues":["Knees track over toes, chest tall — rehearsal, not exercise","Pause 1 sec at bottom to open the hips before loading"],"vid":"bodyweight+squat+form+tutorial+movement+prep"}
+      ]},
+      {label:"Superset A — Goblet squat + Leg curl",mins:22,exercises:[
+        {"name":"A1 · Goblet squat","rx":"4×10–12 · RPE 7","sets":4,"rest":120,"cues":["Dumbbell at chest, 3-sec descent — elbows inside knees at the bottom","Drive through the full foot — don't rise onto your toes"],"vid":"goblet+squat+proper+form+tutorial"},
+        {"name":"A2 · Seated leg curl","rx":"4×12 · RPE 7 · rest 2 min","sets":4,"rest":120,"cues":["Full range of motion — pause briefly at peak contraction","Control the return — don't let the weight crash down"],"vid":"seated+leg+curl+form+tutorial"}
+      ]},
+      {label:"Superset B — Romanian deadlift + Leg press",mins:22,exercises:[
+        {"name":"B1 · Romanian deadlift","rx":"4×10 · RPE 7–8","sets":4,"rest":120,"cues":["Hinge from hips with soft knee bend — bar stays close to legs","Feel hamstring stretch, not lower back — reduce range if it's your back"],"vid":"romanian+deadlift+form+tutorial+hamstring"},
+        {"name":"B2 · Leg press","rx":"4×12 · RPE 7 · rest 2 min","sets":4,"rest":120,"cues":["Feet shoulder-width mid-platform — knees track over toes","Stop just before locking knees — keep tension on quads throughout"],"vid":"leg+press+form+tutorial+proper+foot+placement"}
+      ]},
+      {label:"Accessory — Abductors + Calves",mins:11,exercises:[
+        {"name":"Cable hip abduction","rx":"3×15 each side · rest 60s","sets":3,"rest":60,"cues":["Slight forward hip lean — control the return, don't let cable snap back","Strengthens glute medius — important for knee and lower back health"],"vid":"cable+hip+abduction+form+tutorial"},
+        {"name":"Standing calf raise","rx":"3×20 · rest 60s","sets":3,"rest":60,"cues":["Full range — heel below step going down, full extension at the top","Slow and deliberate — most people rush and get nothing from these"],"vid":"standing+calf+raise+form+tutorial+full+range"}
+      ]},
+      {label:"Core finisher",mins:14,exercises:[
+        {"name":"Dead bug","rx":"3×8 each side · rest 45s","sets":3,"rest":45,"cues":["Lower back flat to floor — move slowly, exhale on each rep","If your back lifts, stop and reduce the range of motion"],"vid":"dead+bug+exercise+core+form+tutorial"},
+        {"name":"Pallof press (side on)","rx":"3×12 each side · rest 45s","sets":3,"rest":45,"cues":["Brace before pressing — resist the pull, that's the whole exercise","Exhale as you extend, hold 1 second before returning"],"vid":"pallof+press+anti+rotation+core+tutorial"},
+        {"name":"Suitcase carry","rx":"3×30m · rest 45s","sets":3,"rest":45,"cues":["One heavy dumbbell — walk tall, look like you're carrying nothing","Core resists the lateral pull — one of the best lower back strengtheners"],"vid":"suitcase+carry+core+stability+form+tutorial"}
+      ]},
+      {label:"Mobility & core block",mins:12,exercises:[
+        {"name":"90/90 hip switch","rx":"2×10 each side","sets":2,"rest":0,"cues":["Sit, rotate both knees side to side keeping chest tall","Opens the hips and protects the lower back"],"vid":"90+90+hip+switch+mobility"},
+        {"name":"Hanging knee raise","rx":"3×12","sets":3,"rest":45,"cues":["Hang from the bar, raise knees with control — no swinging","Spinal decompression after heavy lower work is valuable"],"vid":"hanging+knee+raise+core+form"},
+        {"name":"Bird dog","rx":"3×10 each side","sets":3,"rest":30,"cues":["Opposite arm and leg, slow and controlled — keep hips square","Anti-rotation core that reinforces a stable spine"],"vid":"bird+dog+exercise+core+form"}
+      ]},
+      {label:"Conditioning finisher — pick one or both",mins:14,exercises:[
+        {"name":"Option 1 · Assault bike intervals","rx":"6 rounds: 20s hard / 40s easy","sets":0,"rest":0,"cues":["Short and brutal but brief — legs are already worked so keep it controlled","Full-body effort, push with arms too to share the load"],"vid":"assault+bike+intervals+technique"},
+        {"name":"Option 2 · Incline treadmill walk","rx":"12–15 min · 8–10% incline","sets":0,"rest":0,"cues":["Low impact — lets the legs flush out after heavy lifting","Steady fat-loss cardio that won't hurt recovery for next session"],"vid":"incline+treadmill+walk+fat+loss"}
+      ]},
+      {label:"Cool-down",mins:15,exercises:[
+        {"name":"Pigeon pose (or figure-4)","rx":"2×45s each side","sets":0,"rest":0,"cues":["Breathe into the hip — relax a little deeper on each exhale","Figure-4 on your back is gentler if pigeon is too intense"],"vid":"pigeon+pose+figure+4+hip+stretch+tutorial"},
+        {"name":"Standing quad stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Tuck pelvis under (tailbone down) to significantly increase the stretch","Hold a wall if balance is an issue — stability first"],"vid":"standing+quad+stretch+cool+down"},
+        {"name":"Child's pose","rx":"2 min","sets":0,"rest":0,"cues":["Arms extended, breathe into the lower back — feel it decompress","Gently reverses spinal compression from heavy lifting"],"vid":"childs+pose+yoga+lower+back+relief"},
+        {"name":"Supine knee-to-chest","rx":"1 min each side","sets":0,"rest":0,"cues":["Hug one knee gently toward chest — don't force it","Great final movement to close every lower body session"],"vid":"supine+knee+to+chest+lower+back+stretch"}
+      ]}
+    ]}
+  },
+  '2':{
+    A:{sections:[
+      {label:"Warm-up",mins:15,exercises:[
+        {"name":"Foam roll + band work","rx":"10 min","sets":0,"rest":0,"cues":["Foam roll mid-back and lats, then band pull-aparts and dislocates","Prime the shoulders thoroughly — you're lifting heavier this phase"],"vid":"upper+body+dynamic+warm+up+barbell"},
+        {"name":"Rotator cuff activation","rx":"2×15 each side","sets":2,"rest":0,"cues":["Light band external rotation — elbow pinned to your side","Essential before heavy benching — protects the shoulder joint"],"vid":"rotator+cuff+activation+band+external+rotation"}
+      ]},
+      {label:"Superset A — Bench press + Barbell row",mins:26,exercises:[
+        {"name":"A1 · Barbell bench press","rx":"4×6–8 · RPE 8","sets":4,"rest":150,"cues":["Feet flat, natural arch — touch chest and drive up, no bounce","Bar path slightly angled back toward shoulders, not straight up"],"vid":"barbell+bench+press+form+tutorial"},
+        {"name":"A2 · Barbell row","rx":"4×6–8 · RPE 8 · rest 2–3 min","sets":4,"rest":150,"cues":["Hinge to about 45°, pull bar to lower chest","Control the descent — no jerking or using momentum"],"vid":"barbell+row+form+tutorial"}
+      ]},
+      {label:"Superset B — Overhead press + Pull-up",mins:14,exercises:[
+        {"name":"B1 · Overhead press","rx":"3×8 · RPE 7–8","sets":3,"rest":90,"cues":["Bar at collarbone, press straight up — glutes squeezed to protect lower back","Don't lean back excessively — keep ribs down"],"vid":"standing+overhead+press+barbell+form"},
+        {"name":"B2 · Weighted pull-up or pulldown","rx":"3×8 · RPE 7–8 · rest 90s","sets":3,"rest":90,"cues":["Full hang to chin over the bar — controlled descent every rep","If using pulldown, drive elbows down to your hips"],"vid":"weighted+pull+up+form+tutorial"}
+      ]},
+      {label:"Accessory — Delts + Arms",mins:16,exercises:[
+        {"name":"Dumbbell lateral raise","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Lead with elbows, slight forward lean — stop at shoulder height","Control the lowering — don't let them drop"],"vid":"dumbbell+lateral+raise+form+tutorial"},
+        {"name":"Hammer curl","rx":"3×10 · RPE 7","sets":3,"rest":60,"cues":["Neutral grip, no swinging — works brachialis and forearm","Squeeze at the top, lower slowly"],"vid":"hammer+curl+form+tutorial"},
+        {"name":"Tricep dip or close-grip bench","rx":"3×10 · RPE 7 · rest 60s","sets":3,"rest":60,"cues":["Elbows tucked in, controlled descent","Full lockout at the top without flaring elbows"],"vid":"close+grip+bench+press+triceps+form"}
+      ]},
+      {label:"Mobility & core block",mins:12,exercises:[
+        {"name":"Thoracic rotation (open book)","rx":"2×10 each side","sets":2,"rest":0,"cues":["Lie on side, open the top arm across to the floor — rotate from the mid-back","Improves rotation for pressing and golf alike"],"vid":"open+book+thoracic+rotation+mobility"},
+        {"name":"Hanging knee raise","rx":"3×12","sets":3,"rest":45,"cues":["Hang from the bar, raise knees with control — no swinging","Builds lower-ab strength and decompresses the spine"],"vid":"hanging+knee+raise+core+form"},
+        {"name":"Side plank","rx":"3×30s each side","sets":3,"rest":30,"cues":["Stack the hips, brace hard — straight line head to heels","Trains the obliques and lateral core stability"],"vid":"side+plank+form+tutorial+core"}
+      ]},
+      {label:"Conditioning finisher — pick one or both",mins:14,exercises:[
+        {"name":"Option 1 · Rower intervals","rx":"8 rounds: 30s hard / 30s easy","sets":0,"rest":0,"cues":["Upper-body driven so your legs stay fresh — drive with the arms and back","Hard efforts at ~80%, easy efforts truly easy to recover"],"vid":"rowing+machine+intervals+technique"},
+        {"name":"Option 2 · Incline treadmill walk","rx":"12–15 min · 10–12% incline","sets":0,"rest":0,"cues":["Brisk pace, no holding the rails — great low-impact fat-loss work","Keeps the heart rate in the fat-burning zone without taxing recovery"],"vid":"incline+treadmill+walk+fat+loss"}
+      ]},
+      {label:"Cool-down",mins:15,exercises:[
+        {"name":"Full upper body stretch","rx":"15 min","sets":0,"rest":0,"cues":["Chest, lats, shoulders, triceps — hold each 30 sec","Finish with deep breathing to bring the heart rate down"],"vid":"full+upper+body+stretch+routine+cool+down"}
+      ]}
+    ]},
+    B:{sections:[
+      {label:"Warm-up",mins:15,exercises:[
+        {"name":"Glute activation circuit","rx":"10 min","sets":0,"rest":0,"cues":["Glute bridges, lateral band walks, bodyweight squats","Prime the posterior chain before heavy hinging"],"vid":"glute+activation+circuit+warm+up"},
+        {"name":"Ankle mobility","rx":"5 min","sets":0,"rest":0,"cues":["Knee-to-wall ankle rocks each side","Better ankle mobility = deeper, safer squats and deadlifts"],"vid":"ankle+mobility+drills+squat"}
+      ]},
+      {label:"Primary — Trap bar deadlift",mins:19,exercises:[
+        {"name":"Trap bar deadlift","rx":"5×5 · RPE 8","sets":5,"rest":180,"cues":["Hips back, chest up — drive the floor away rather than pulling up","More upright torso than conventional — protects the lower back. This is your main strength builder"],"vid":"trap+bar+deadlift+form+tutorial+lower+back+safe"}
+      ]},
+      {label:"Superset B — Split squat + Leg curl",mins:19,exercises:[
+        {"name":"B1 · Bulgarian split squat","rx":"4×8 each side · RPE 7–8","sets":4,"rest":120,"cues":["Front foot forward enough that shin stays vertical, torso upright","3-sec descent — start light, this exercise humbles everyone"],"vid":"bulgarian+split+squat+form+tutorial"},
+        {"name":"B2 · Nordic curl or seated leg curl","rx":"3×8 · RPE 7 · rest 2 min","sets":3,"rest":120,"cues":["If nordic: lower as slowly as possible, partner holds ankles","If machine: full range, controlled negative"],"vid":"nordic+hamstring+curl+form+tutorial"}
+      ]},
+      {label:"Superset C — Posterior chain + Core",mins:14,exercises:[
+        {"name":"C1 · Cable pull-through","rx":"3×15 · RPE 6","sets":3,"rest":90,"cues":["Hip hinge pattern — same as RDL, cable teaches the feel of hip drive","Squeeze glutes hard at the top, don't overarch"],"vid":"cable+pull+through+form+tutorial"},
+        {"name":"C2 · Suitcase carry","rx":"3×30m · rest 90s","sets":3,"rest":90,"cues":["One dumbbell, stay tall — don't lean to either side","Core resists the lateral load — excellent for lower back health"],"vid":"suitcase+carry+core+stability+form+tutorial"}
+      ]},
+      {label:"Mobility & core block",mins:12,exercises:[
+        {"name":"90/90 hip switch","rx":"2×10 each side","sets":2,"rest":0,"cues":["Sit, rotate both knees side to side keeping chest tall","Opens the hips and protects the lower back"],"vid":"90+90+hip+switch+mobility"},
+        {"name":"Hanging knee raise","rx":"3×12","sets":3,"rest":45,"cues":["Hang from the bar, raise knees with control — no swinging","Spinal decompression after heavy lower work is valuable"],"vid":"hanging+knee+raise+core+form"},
+        {"name":"Bird dog","rx":"3×10 each side","sets":3,"rest":30,"cues":["Opposite arm and leg, slow and controlled — keep hips square","Anti-rotation core that reinforces a stable spine"],"vid":"bird+dog+exercise+core+form"}
+      ]},
+      {label:"Conditioning finisher — pick one or both",mins:14,exercises:[
+        {"name":"Option 1 · Assault bike intervals","rx":"6 rounds: 20s hard / 40s easy","sets":0,"rest":0,"cues":["Short and brutal but brief — legs are already worked so keep it controlled","Full-body effort, push with arms too to share the load"],"vid":"assault+bike+intervals+technique"},
+        {"name":"Option 2 · Incline treadmill walk","rx":"12–15 min · 8–10% incline","sets":0,"rest":0,"cues":["Low impact — lets the legs flush out after heavy lifting","Steady fat-loss cardio that won't hurt recovery for next session"],"vid":"incline+treadmill+walk+fat+loss"}
+      ]},
+      {label:"Cool-down",mins:15,exercises:[
+        {"name":"Full lower body stretch","rx":"15 min","sets":0,"rest":0,"cues":["Hip flexors, glutes, hamstrings, quads — hold each 30 sec","Finish with child's pose and knee-to-chest for the lower back"],"vid":"full+lower+body+stretch+routine+cool+down"}
+      ]}
+    ]}
+  },
+  '3':{
+    A:{sections:[
+      {label:"Warm-up (golf-specific)",mins:15,exercises:[
+        {"name":"Hip 90/90 mobility","rx":"5 min","sets":0,"rest":0,"cues":["Rotate between internal and external hip positions — essential for backswing","Tight hips are a top cause of back pain in golfers"],"vid":"hip+90+90+mobility+exercise+golf+tutorial"},
+        {"name":"Thoracic rotation (seated)","rx":"2×10 each side","sets":2,"rest":0,"cues":["Arms crossed, rotate only from the mid-back — hips stay still","This is the rotation your golf swing depends on"],"vid":"seated+thoracic+rotation+mobility+golf"},
+        {"name":"Band shoulder warm-up","rx":"2×12 each","sets":2,"rest":0,"cues":["External rotation, pull-apart, overhead reach sequence","Full shoulder prep for rotational pressing"],"vid":"band+shoulder+warm+up+routine"}
+      ]},
+      {label:"Superset A — Wood chop + Med ball throw",mins:16,exercises:[
+        {"name":"A1 · Cable wood chop (high to low)","rx":"4×12 each side · RPE 7","sets":4,"rest":90,"cues":["Rotate from hips first, then core, then arms — this IS the golf swing pattern","Don't arm-pull it — power comes from the ground up"],"vid":"cable+wood+chop+rotational+power+golf+form"},
+        {"name":"A2 · Med ball rotational throw","rx":"3×8 each side · explosive · rest 90s","sets":3,"rest":90,"cues":["Load into back hip, drive through front — explosive intent","Same sequence as the downswing — throw hard"],"vid":"medicine+ball+rotational+throw+golf+power"}
+      ]},
+      {label:"Superset B — Single-arm row + Anti-rotation",mins:14,exercises:[
+        {"name":"B1 · Single-arm cable row","rx":"3×12 each side · RPE 7","sets":3,"rest":90,"cues":["Rotate slightly into the pull — trains the follow-through pattern","Control the return, feel the lat stretch"],"vid":"single+arm+cable+row+form+tutorial"},
+        {"name":"B2 · Pallof press (rotational)","rx":"3×10 each side · rest 90s","sets":3,"rest":90,"cues":["Press, rotate 45°, return — resist the cable pulling you off balance","Slow and controlled the whole way"],"vid":"rotational+pallof+press+core+tutorial"}
+      ]},
+      {label:"Superset C — Shoulder health + Press",mins:16,exercises:[
+        {"name":"C1 · Dumbbell press (neutral grip)","rx":"3×12 · RPE 7","sets":3,"rest":60,"cues":["Neutral grip keeps the shoulder healthy through high golf volume","Controlled tempo, full range"],"vid":"neutral+grip+dumbbell+press+form"},
+        {"name":"C2 · Face pull","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Every session — keeps rotator cuff healthy","Elbows high and wide, spread at the face"],"vid":"cable+face+pull+form+tutorial+shoulder+health"},
+        {"name":"C3 · Landmine anti-rotation press","rx":"3×10 each side · rest 60s","sets":3,"rest":60,"cues":["Press across the body — core resists the rotation","Golf-specific shoulder and core integration"],"vid":"landmine+press+anti+rotation+form"}
+      ]},
+      {label:"Mobility & core block",mins:12,exercises:[
+        {"name":"Thoracic rotation (open book)","rx":"2×10 each side","sets":2,"rest":0,"cues":["Lie on side, open the top arm across to the floor — rotate from the mid-back","Improves rotation for pressing and golf alike"],"vid":"open+book+thoracic+rotation+mobility"},
+        {"name":"Hanging knee raise","rx":"3×12","sets":3,"rest":45,"cues":["Hang from the bar, raise knees with control — no swinging","Builds lower-ab strength and decompresses the spine"],"vid":"hanging+knee+raise+core+form"},
+        {"name":"Side plank","rx":"3×30s each side","sets":3,"rest":30,"cues":["Stack the hips, brace hard — straight line head to heels","Trains the obliques and lateral core stability"],"vid":"side+plank+form+tutorial+core"}
+      ]},
+      {label:"Conditioning finisher — pick one or both",mins:14,exercises:[
+        {"name":"Option 1 · Rower intervals","rx":"8 rounds: 30s hard / 30s easy","sets":0,"rest":0,"cues":["Upper-body driven so your legs stay fresh — drive with the arms and back","Hard efforts at ~80%, easy efforts truly easy to recover"],"vid":"rowing+machine+intervals+technique"},
+        {"name":"Option 2 · Incline treadmill walk","rx":"12–15 min · 10–12% incline","sets":0,"rest":0,"cues":["Brisk pace, no holding the rails — great low-impact fat-loss work","Keeps the heart rate in the fat-burning zone without taxing recovery"],"vid":"incline+treadmill+walk+fat+loss"}
+      ]},
+      {label:"Cool-down",mins:15,exercises:[
+        {"name":"Thoracic + hip stretch","rx":"15 min","sets":0,"rest":0,"cues":["Open-book thoracic stretch, hip flexor and glute stretches","Maintain the mobility that makes the swing work"],"vid":"thoracic+hip+mobility+stretch+routine"}
+      ]}
+    ]},
+    B:{sections:[
+      {label:"Warm-up",mins:15,exercises:[
+        {"name":"Glute activation + lateral band","rx":"10 min","sets":0,"rest":0,"cues":["Glute bridges and lateral band walks — fire up the hips","Single-leg balance holds to prime stability"],"vid":"glute+activation+lateral+band+warm+up"},
+        {"name":"Single-leg balance drills","rx":"5 min","sets":0,"rest":0,"cues":["Balance on one leg, reach the other foot in different directions","Trains the stability your weight shift depends on"],"vid":"single+leg+balance+drills+stability"}
+      ]},
+      {label:"Primary — Romanian deadlift",mins:11,exercises:[
+        {"name":"Romanian deadlift","rx":"4×10 · RPE 7","sets":4,"rest":120,"cues":["Maintain the strength you built — same hinge form, moderate weight","Bar close to legs, feel the hamstring stretch"],"vid":"romanian+deadlift+form+tutorial+hamstring"}
+      ]},
+      {label:"Superset B — Single-leg + Lateral power",mins:14,exercises:[
+        {"name":"B1 · Single-leg squat to box","rx":"3×10 each side · RPE 7","sets":3,"rest":90,"cues":["Sit back slowly to the box, drive up through the heel","Builds the unilateral stability critical for golf weight shift"],"vid":"single+leg+box+squat+form+tutorial"},
+        {"name":"B2 · Lateral lunge","rx":"3×12 each side · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["Push hips back and out — trains lateral weight transfer","Exactly the movement the downswing requires"],"vid":"lateral+lunge+form+tutorial"}
+      ]},
+      {label:"Superset C — Glute power + Core",mins:16,exercises:[
+        {"name":"C1 · Hip thrust (barbell)","rx":"4×12 · RPE 8","sets":4,"rest":90,"cues":["Drive hips to full extension — glute power transfers to swing speed","Squeeze at the top, hips level not overarched"],"vid":"barbell+hip+thrust+form+tutorial+glutes"},
+        {"name":"C2 · Dead bug (weighted)","rx":"3×10 each side · rest 90s","sets":3,"rest":90,"cues":["Hold a light plate on chest — same anti-extension core work with load","Lower back stays flat throughout"],"vid":"weighted+dead+bug+core+form"}
+      ]},
+      {label:"Mobility & core block",mins:12,exercises:[
+        {"name":"90/90 hip switch","rx":"2×10 each side","sets":2,"rest":0,"cues":["Sit, rotate both knees side to side keeping chest tall","Opens the hips and protects the lower back"],"vid":"90+90+hip+switch+mobility"},
+        {"name":"Hanging knee raise","rx":"3×12","sets":3,"rest":45,"cues":["Hang from the bar, raise knees with control — no swinging","Spinal decompression after heavy lower work is valuable"],"vid":"hanging+knee+raise+core+form"},
+        {"name":"Bird dog","rx":"3×10 each side","sets":3,"rest":30,"cues":["Opposite arm and leg, slow and controlled — keep hips square","Anti-rotation core that reinforces a stable spine"],"vid":"bird+dog+exercise+core+form"}
+      ]},
+      {label:"Conditioning finisher — pick one or both",mins:14,exercises:[
+        {"name":"Option 1 · Assault bike intervals","rx":"6 rounds: 20s hard / 40s easy","sets":0,"rest":0,"cues":["Short and brutal but brief — legs are already worked so keep it controlled","Full-body effort, push with arms too to share the load"],"vid":"assault+bike+intervals+technique"},
+        {"name":"Option 2 · Incline treadmill walk","rx":"12–15 min · 8–10% incline","sets":0,"rest":0,"cues":["Low impact — lets the legs flush out after heavy lifting","Steady fat-loss cardio that won't hurt recovery for next session"],"vid":"incline+treadmill+walk+fat+loss"}
+      ]},
+      {label:"Cool-down",mins:15,exercises:[
+        {"name":"Hip flexor + glute stretch","rx":"15 min","sets":0,"rest":0,"cues":["Deep hip flexor stretch, pigeon pose, hamstring stretch","Hold each 30–45 sec, breathe into the tight spots"],"vid":"hip+flexor+glute+stretch+routine"}
+      ]}
+    ]}
+  },
+  '4':{
+    A:{sections:[
+      {label:"Warm-up",mins:15,exercises:[
+        {"name":"Full mobility circuit","rx":"10 min","sets":0,"rest":0,"cues":["Thoracic rotations, hip openers, band shoulder work","Comprehensive prep before explosive work"],"vid":"full+body+dynamic+mobility+circuit"},
+        {"name":"Swing simulation drills","rx":"5 min","sets":0,"rest":0,"cues":["Slow shadow swings building to faster — grooves the pattern","Rehearse the movement you're about to power up"],"vid":"golf+swing+warm+up+drills"}
+      ]},
+      {label:"Power block A — Explosive rotation",mins:22,exercises:[
+        {"name":"A1 · Med ball slam","rx":"4×6 · explosive","sets":4,"rest":120,"cues":["Full body overhead to floor — maximum intent on every rep","Don't pace yourself, go all out each rep then reset"],"vid":"medicine+ball+slam+power+form"},
+        {"name":"A2 · Cable rotational press","rx":"4×8 each side · fast · rest 2 min","sets":4,"rest":120,"cues":["Start loaded, press and rotate fast — decelerate under control","Speed is the stimulus here, not heavy weight"],"vid":"cable+rotational+press+power+golf"}
+      ]},
+      {label:"Strength B — Maintain upper base",mins:17,exercises:[
+        {"name":"B1 · Barbell bench press","rx":"3×6 · RPE 8","sets":3,"rest":120,"cues":["Heavier than phase 2 — push to move the bar fast even when heavy","Intent on every rep up"],"vid":"barbell+bench+press+form+tutorial"},
+        {"name":"B2 · Weighted pull-up","rx":"3×6 · RPE 8 · rest 2 min","sets":3,"rest":120,"cues":["Full hang, chin over bar, controlled descent","Add weight if bodyweight is easy"],"vid":"weighted+pull+up+form+tutorial"}
+      ]},
+      {label:"Golf-specific finisher",mins:16,exercises:[
+        {"name":"Landmine press (single arm, rotational)","rx":"3×10 each side","sets":3,"rest":60,"cues":["Press across body with rotation — mimics late follow-through","Power through the rotation, control the return"],"vid":"landmine+press+rotational+golf"},
+        {"name":"Serratus wall slide","rx":"3×12 · rest 60s","sets":3,"rest":60,"cues":["Arms on wall, slide up — builds shoulder blade control","Critical for a consistent swing plane"],"vid":"serratus+wall+slide+form"},
+        {"name":"Rotational plank","rx":"3×10 each side · rest 60s","sets":3,"rest":60,"cues":["Side plank, rotate top arm under and back","Trains oblique strength in the golf position"],"vid":"rotational+side+plank+core+form"}
+      ]},
+      {label:"Mobility & core block",mins:12,exercises:[
+        {"name":"Thoracic rotation (open book)","rx":"2×10 each side","sets":2,"rest":0,"cues":["Lie on side, open the top arm across to the floor — rotate from the mid-back","Improves rotation for pressing and golf alike"],"vid":"open+book+thoracic+rotation+mobility"},
+        {"name":"Hanging knee raise","rx":"3×12","sets":3,"rest":45,"cues":["Hang from the bar, raise knees with control — no swinging","Builds lower-ab strength and decompresses the spine"],"vid":"hanging+knee+raise+core+form"},
+        {"name":"Side plank","rx":"3×30s each side","sets":3,"rest":30,"cues":["Stack the hips, brace hard — straight line head to heels","Trains the obliques and lateral core stability"],"vid":"side+plank+form+tutorial+core"}
+      ]},
+      {label:"Conditioning finisher — pick one or both",mins:14,exercises:[
+        {"name":"Option 1 · Rower intervals","rx":"8 rounds: 30s hard / 30s easy","sets":0,"rest":0,"cues":["Upper-body driven so your legs stay fresh — drive with the arms and back","Hard efforts at ~80%, easy efforts truly easy to recover"],"vid":"rowing+machine+intervals+technique"},
+        {"name":"Option 2 · Incline treadmill walk","rx":"12–15 min · 10–12% incline","sets":0,"rest":0,"cues":["Brisk pace, no holding the rails — great low-impact fat-loss work","Keeps the heart rate in the fat-burning zone without taxing recovery"],"vid":"incline+treadmill+walk+fat+loss"}
+      ]},
+      {label:"Cool-down",mins:15,exercises:[
+        {"name":"Full upper + thoracic stretch","rx":"15 min","sets":0,"rest":0,"cues":["Chest, shoulders, lats, thoracic openers — hold each 30 sec","Breathe and let the nervous system settle after explosive work"],"vid":"upper+body+thoracic+stretch+routine"}
+      ]}
+    ]},
+    B:{sections:[
+      {label:"Warm-up",mins:15,exercises:[
+        {"name":"Dynamic hip mobility","rx":"10 min","sets":0,"rest":0,"cues":["Leg swings, 90/90 transitions, deep squat holds","Hips must be fully open before explosive lower work"],"vid":"dynamic+hip+mobility+routine"},
+        {"name":"Lateral band walks","rx":"5 min","sets":0,"rest":0,"cues":["Stay low, controlled steps — fire up the glute medius","Primes the hips for jumping and single-leg power"],"vid":"lateral+band+walk+glute+activation+tutorial"}
+      ]},
+      {label:"Explosive A — Peak power",mins:15,exercises:[
+        {"name":"Trap bar jump deadlift","rx":"4×5 · explosive","sets":4,"rest":180,"cues":["Load 40–50% of your phase 2 max — drive up explosively, leave the ground","Closest gym movement to driving through impact in golf"],"vid":"trap+bar+jump+deadlift+power+form"}
+      ]},
+      {label:"Superset B — Single-leg + Glute speed",mins:19,exercises:[
+        {"name":"B1 · Bulgarian split squat (heavier)","rx":"3×8 each side · RPE 8","sets":3,"rest":120,"cues":["Controlled descent, drive up with more intent than phase 3","Still rock solid on form even as load increases"],"vid":"bulgarian+split+squat+form+tutorial"},
+        {"name":"B2 · Hip thrust (heavier)","rx":"4×8 · RPE 8 · rest 2 min","sets":4,"rest":120,"cues":["Maximum glute contraction at the top, hold 1 sec","This is peak hip drive training for clubhead speed"],"vid":"barbell+hip+thrust+form+tutorial+glutes"}
+      ]},
+      {label:"Superset C — Lateral stability + Carry",mins:16,exercises:[
+        {"name":"C1 · Lateral band step (loaded)","rx":"3×15 each side","sets":3,"rest":60,"cues":["Band around ankles, stay low — trains hip abductors for follow-through balance","Controlled, no bouncing"],"vid":"lateral+band+step+glute+form"},
+        {"name":"C2 · Single-leg RDL","rx":"3×10 each side · RPE 7","sets":3,"rest":60,"cues":["Balance and hamstring — same hip hinge on one leg","Builds finish-position stability directly"],"vid":"single+leg+romanian+deadlift+form"},
+        {"name":"C3 · Suitcase carry (heavy)","rx":"3×40m · rest 60s","sets":3,"rest":60,"cues":["Heavier than phase 3 — tall posture, no lean","Walk 40m each set, brace the whole way"],"vid":"suitcase+carry+core+stability+form+tutorial"}
+      ]},
+      {label:"Mobility & core block",mins:12,exercises:[
+        {"name":"90/90 hip switch","rx":"2×10 each side","sets":2,"rest":0,"cues":["Sit, rotate both knees side to side keeping chest tall","Opens the hips and protects the lower back"],"vid":"90+90+hip+switch+mobility"},
+        {"name":"Hanging knee raise","rx":"3×12","sets":3,"rest":45,"cues":["Hang from the bar, raise knees with control — no swinging","Spinal decompression after heavy lower work is valuable"],"vid":"hanging+knee+raise+core+form"},
+        {"name":"Bird dog","rx":"3×10 each side","sets":3,"rest":30,"cues":["Opposite arm and leg, slow and controlled — keep hips square","Anti-rotation core that reinforces a stable spine"],"vid":"bird+dog+exercise+core+form"}
+      ]},
+      {label:"Conditioning finisher — pick one or both",mins:14,exercises:[
+        {"name":"Option 1 · Assault bike intervals","rx":"6 rounds: 20s hard / 40s easy","sets":0,"rest":0,"cues":["Short and brutal but brief — legs are already worked so keep it controlled","Full-body effort, push with arms too to share the load"],"vid":"assault+bike+intervals+technique"},
+        {"name":"Option 2 · Incline treadmill walk","rx":"12–15 min · 8–10% incline","sets":0,"rest":0,"cues":["Low impact — lets the legs flush out after heavy lifting","Steady fat-loss cardio that won't hurt recovery for next session"],"vid":"incline+treadmill+walk+fat+loss"}
+      ]},
+      {label:"Cool-down",mins:15,exercises:[
+        {"name":"Hip + glute + calf stretch","rx":"15 min","sets":0,"rest":0,"cues":["Pigeon, hip flexor, calf and hamstring stretches — hold each 30–45 sec","Close out the program phase with full lower-body decompression"],"vid":"lower+body+stretch+routine+cool+down"}
+      ]}
+    ]}
+  }
+};
+let currentPhase='1';
+const DAYS_DATA = PHASES[currentPhase];
 
 const LIFTS_LIST = ['Goblet squat','Romanian deadlift','Leg press','Trap bar deadlift','Hip thrust','Incline DB press','Lat pulldown'];
 
@@ -521,13 +757,13 @@ const MEALS = {
 
 const TARGETS = {you:{trainCal:2250,restCal:2050,prot:180,trainCarb:210,trainFat:70},dad:{trainCal:2600,restCal:2350,prot:210,trainCarb:245,trainFat:80}};
 
-function loadState(){try{const s=localStorage.getItem('trainTogether');return s?JSON.parse(s):{you:{sessions:0,streak:0,weights:[],liftBests:{},foods:[],foodCal:0,foodProt:0,foodCarb:0,foodFat:0},dad:{sessions:0,streak:0,weights:[],liftBests:{},foods:[],foodCal:0,foodProt:0,foodCarb:0,foodFat:0}};}catch(e){return {you:{sessions:0,streak:0,weights:[],liftBests:{},foods:[],foodCal:0,foodProt:0,foodCarb:0,foodFat:0},dad:{sessions:0,streak:0,weights:[],liftBests:{},foods:[],foodCal:0,foodProt:0,foodCarb:0,foodFat:0}};}}
+function loadState(){try{const s=localStorage.getItem('trainTogether');return s?JSON.parse(s):{you:{sessions:0,streak:0,weights:[],liftBests:{},foods:[],foodCal:0,foodProt:0,foodCarb:0,foodFat:0,water:null},dad:{sessions:0,streak:0,weights:[],liftBests:{},foods:[],foodCal:0,foodProt:0,foodCarb:0,foodFat:0,water:null}};}catch(e){return {you:{sessions:0,streak:0,weights:[],liftBests:{},foods:[],foodCal:0,foodProt:0,foodCarb:0,foodFat:0,water:null},dad:{sessions:0,streak:0,weights:[],liftBests:{},foods:[],foodCal:0,foodProt:0,foodCarb:0,foodFat:0,water:null}};}}
 function saveState(){try{localStorage.setItem('trainTogether',JSON.stringify(state));}catch(e){}}
 
 let state = loadState();
 let homeUser='you', progUser='you', nutUser='you', nutDay='train';
 let currentDay='A', sessionActive=false, sessionStart=null, sessionInterval=null, currentExIdx=0, allEx=[];
-let timerSecs=90, timerMax=90, timerRunning=false, timerInterval=null;
+let timerSecs=90, timerMax=90, timerRunning=false, timerInterval=null, timerEndTime=null;
 
 document.getElementById('home-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
@@ -553,23 +789,32 @@ function refreshHome(){
   const u=homeUser, s=state[u];
   document.getElementById('h-streak').textContent=s.streak;
   document.getElementById('h-sessions').textContent=s.sessions;
-  const cal=s.foodCal||0,prot=s.foodProt||0,carb=s.foodCarb||0,fat=s.foodFat||0;
-  document.getElementById('snap-cal').textContent=Math.round(cal);
-  document.getElementById('snap-prot').textContent=Math.round(prot)+'g';
-  document.getElementById('snap-carb').textContent=Math.round(carb)+'g';
-  document.getElementById('snap-fat').textContent=Math.round(fat)+'g';
+  const today=new Date().toLocaleDateString();
+  const t=(s.foods||[]).filter(f=>f.date===today).reduce((a,f)=>({cal:a.cal+(f.cal||0),prot:a.prot+(f.prot||0),carb:a.carb+(f.carb||0),fat:a.fat+(f.fat||0)}),{cal:0,prot:0,carb:0,fat:0});
+  document.getElementById('snap-cal').textContent=Math.round(t.cal);
+  document.getElementById('snap-prot').textContent=Math.round(t.prot)+'g';
+  document.getElementById('snap-carb').textContent=Math.round(t.carb)+'g';
+  document.getElementById('snap-fat').textContent=Math.round(t.fat)+'g';
   const target=u==='you'?2250:2600;
-  const pct=Math.min(100,Math.round(cal/target*100));
+  const pct=Math.min(100,Math.round(t.cal/target*100));
   document.getElementById('snap-bar').style.width=pct+'%';
-  document.getElementById('snap-label').textContent=Math.round(cal)+' / '+target.toLocaleString()+' cal';
+  document.getElementById('snap-label').textContent=Math.round(t.cal)+' / '+target.toLocaleString()+' cal';
 }
 
-function flatEx(day){const arr=[];DAYS_DATA[day].sections.forEach(sec=>sec.exercises.forEach(ex=>arr.push({...ex,secLabel:sec.label})));return arr;}
+function flatEx(day){const arr=[];PHASES[currentPhase][day].sections.forEach(sec=>sec.exercises.forEach(ex=>arr.push({...ex,secLabel:sec.label})));return arr;}
+
+function selectPhase(p,btn){
+  currentPhase=p;
+  for(let i=1;i<=4;i++)document.getElementById('phase-'+i+'-btn').className='toggle-btn'+(String(i)===p?' active':'');
+  document.getElementById('workout-sub').textContent=PHASE_INFO[p].name+' · '+PHASE_INFO[p].focus;
+  if(sessionActive){clearInterval(sessionInterval);sessionActive=false;document.getElementById('session-bar').style.display='none';document.getElementById('start-sess-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start session';document.getElementById('start-sess-btn').className='btn btn-green';}
+  renderWorkout();
+}
 
 function renderWorkout(){
   allEx=flatEx(currentDay);
   let html='';
-  DAYS_DATA[currentDay].sections.forEach(sec=>{
+  PHASES[currentPhase][currentDay].sections.forEach(sec=>{
     html+=`<div class="section-label" style="display:flex;justify-content:space-between;align-items:center">${sec.label}<span class="pill pill-blue">${sec.mins} min</span></div>`;
     sec.exercises.forEach(ex=>{
       const gIdx=allEx.findIndex(e=>e.name===ex.name&&e.secLabel===sec.label);
@@ -647,7 +892,7 @@ function tickSession(){
 
 function advanceEx(){if(currentExIdx<allEx.length-1){currentExIdx++;renderWorkout();}else{toggleSession();}}
 
-function launchRest(secs){timerSecs=secs;timerMax=secs;updateTimerDisp();if(timerRunning){clearInterval(timerInterval);timerRunning=false;}document.getElementById('timer-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start';document.getElementById('timer-btn').className='btn btn-green';goScreen('timer');setTimeout(()=>toggleTimer(),300);}
+function launchRest(secs){clearInterval(timerInterval);timerRunning=false;timerSecs=secs;timerMax=secs;timerEndTime=null;updateTimerDisp();document.getElementById('timer-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start';document.getElementById('timer-btn').className='btn btn-green';goScreen('timer');setTimeout(()=>toggleTimer(),300);}
 
 function refreshProgress(){
   const u=progUser,s=state[u];
@@ -693,19 +938,87 @@ function renderLiftBests(){
 
 function updateLiftBest(lift,val){if(!state[progUser].liftBests)state[progUser].liftBests={};state[progUser].liftBests[lift]=val?parseFloat(val):null;saveState();refreshCompare();}
 
+const QUICK_FOODS=[
+  {name:'Chicken breast (6oz)',cal:280,prot:52,carb:0,fat:6},
+  {name:'Eggs / egg whites (3+3)',cal:230,prot:23,carb:2,fat:15},
+  {name:'Greek yogurt (200g)',cal:120,prot:20,carb:8,fat:0},
+  {name:'Protein shake (1 scoop)',cal:130,prot:25,carb:3,fat:2},
+  {name:'Peanut/almond butter (2 tbsp)',cal:190,prot:7,carb:7,fat:16}
+];
+
+function waterGoal(u){
+  // half bodyweight in oz; use latest logged weight, else sensible default
+  const wts=state[u].weights||[];
+  const bw=wts.length?wts[wts.length-1].v:(u==='you'?180:210);
+  return Math.round(bw/2);
+}
+
 function refreshNutrition(){
   const u=nutUser,d=nutDay,t=TARGETS[u];
   const meals=MEALS[u][d];
   const totals=meals.reduce((a,m)=>({cal:a.cal+m.cal,prot:a.prot+m.prot,carb:a.carb+m.carb,fat:a.fat+m.fat}),{cal:0,prot:0,carb:0,fat:0});
   const col=u==='you'?'var(--blue)':'var(--green)';
   const bg=u==='you'?'var(--blue-light)':'var(--green-light)';
-  document.getElementById('nut-totals').innerHTML=`
-    <div style="background:${bg};border-radius:var(--radius-sm);padding:10px;text-align:center"><div style="font-size:10px;color:${col};margin-bottom:2px">Calories</div><div style="font-size:16px;font-weight:700;color:var(--text)">${totals.cal}</div><div style="font-size:10px;color:var(--text-2)">${d==='train'?'training day':'rest day'}</div></div>
-    <div style="background:${bg};border-radius:var(--radius-sm);padding:10px;text-align:center"><div style="font-size:10px;color:${col};margin-bottom:2px">Protein</div><div style="font-size:16px;font-weight:700;color:var(--text)">${totals.prot}g</div></div>
-    <div style="background:${bg};border-radius:var(--radius-sm);padding:10px;text-align:center"><div style="font-size:10px;color:${col};margin-bottom:2px">Carbs</div><div style="font-size:16px;font-weight:700;color:var(--text)">${totals.carb}g</div></div>
-    <div style="background:${bg};border-radius:var(--radius-sm);padding:10px;text-align:center"><div style="font-size:10px;color:${col};margin-bottom:2px">Fat</div><div style="font-size:16px;font-weight:700;color:var(--text)">${totals.fat}g</div></div>`;
+  const cell=(label,val,sub)=>`<div style="background:${bg};border-radius:var(--radius-sm);padding:10px;text-align:center"><div style="font-size:10px;color:${col};margin-bottom:2px">${label}</div><div style="font-size:16px;font-weight:700;color:var(--text)">${val}</div>${sub?`<div style="font-size:10px;color:var(--text-2)">${sub}</div>`:''}</div>`;
+  document.getElementById('nut-totals').innerHTML=
+    cell('Calories',totals.cal,d==='train'?'training day':'rest day')+cell('Protein',totals.prot+'g')+cell('Carbs',totals.carb+'g')+cell('Fat',totals.fat+'g');
+
+  // logged so far
+  const logged=loggedTotals(u);
+  const lcell=(label,val)=>`<div style="background:var(--gray-bg);border-radius:var(--radius-sm);padding:8px;text-align:center"><div style="font-size:10px;color:var(--text-2);margin-bottom:2px">${label}</div><div style="font-size:15px;font-weight:600;color:var(--text)">${val}</div></div>`;
+  document.getElementById('nut-logged').innerHTML=
+    lcell('Calories',Math.round(logged.cal))+lcell('Protein',Math.round(logged.prot)+'g')+lcell('Carbs',Math.round(logged.carb)+'g')+lcell('Fat',Math.round(logged.fat)+'g');
+
+  // remaining (target minus logged)
+  const rem={cal:totals.cal-logged.cal,prot:totals.prot-logged.prot,carb:totals.carb-logged.carb,fat:totals.fat-logged.fat};
+  const rcell=(label,val,unit)=>{const neg=val<0;return `<div style="background:${neg?'#FCEBEB':'var(--green-light)'};border-radius:var(--radius-sm);padding:8px;text-align:center"><div style="font-size:10px;color:${neg?'#791F1F':'var(--green-dark)'};margin-bottom:2px">${label}</div><div style="font-size:15px;font-weight:600;color:${neg?'#791F1F':'var(--green-dark)'}">${neg?'+':''}${Math.round(Math.abs(val))}${unit}</div></div>`;};
+  document.getElementById('nut-remaining').innerHTML=
+    rcell('Calories',rem.cal,'')+rcell('Protein',rem.prot,'g')+rcell('Carbs',rem.carb,'g')+rcell('Fat',rem.fat,'g');
+
+  renderQuickAdd();
+  renderWater();
   renderMealCards(meals);
   renderFoodLog();
+}
+
+function loggedTotals(u){
+  const today=new Date().toLocaleDateString();
+  return (state[u].foods||[]).filter(f=>f.date===today).reduce((a,f)=>({cal:a.cal+(f.cal||0),prot:a.prot+(f.prot||0),carb:a.carb+(f.carb||0),fat:a.fat+(f.fat||0)}),{cal:0,prot:0,carb:0,fat:0});
+}
+
+function renderQuickAdd(){
+  document.getElementById('quick-add-grid').innerHTML=QUICK_FOODS.map((f,i)=>`
+    <button class="btn" style="margin-bottom:0;flex-direction:column;align-items:flex-start;padding:10px 12px;text-align:left" onclick="quickAdd(${i})">
+      <span style="font-size:13px;font-weight:600;color:var(--text)">${f.name}</span>
+      <span style="font-size:11px;color:var(--text-2)">${f.cal} cal · ${f.prot}g P · ${f.carb}g C · ${f.fat}g F</span>
+    </button>`).join('');
+}
+
+function quickAdd(i){
+  const f=QUICK_FOODS[i],u=nutUser;
+  if(!state[u].foods)state[u].foods=[];
+  state[u].foods.push({...f,date:new Date().toLocaleDateString()});
+  state[u].foodCal=(state[u].foodCal||0)+f.cal;
+  state[u].foodProt=(state[u].foodProt||0)+f.prot;
+  state[u].foodCarb=(state[u].foodCarb||0)+f.carb;
+  state[u].foodFat=(state[u].foodFat||0)+f.fat;
+  saveState();refreshNutrition();refreshHome();
+}
+
+function addWater(oz){
+  const u=nutUser,today=new Date().toLocaleDateString();
+  if(!state[u].water||state[u].water.date!==today)state[u].water={date:today,oz:0};
+  state[u].water.oz=Math.max(0,state[u].water.oz+oz);
+  saveState();renderWater();
+}
+
+function renderWater(){
+  const u=nutUser,today=new Date().toLocaleDateString();
+  if(!state[u].water||state[u].water.date!==today)state[u].water={date:today,oz:0};
+  const goal=waterGoal(u),oz=state[u].water.oz;
+  document.getElementById('water-oz').textContent=oz;
+  document.getElementById('water-goal').textContent=goal;
+  document.getElementById('water-bar').style.width=Math.min(100,Math.round(oz/goal*100))+'%';
 }
 
 function renderMealCards(meals){
@@ -713,13 +1026,17 @@ function renderMealCards(meals){
     <div class="meal-block">
       <div class="meal-header" onclick="toggleMeal(${i})">
         <div style="flex:1"><div class="meal-title">${m.name}</div><div class="meal-sub">${m.time} · ${m.title}</div></div>
-        <div style="display:flex;gap:5px;align-items:center">
-          <span class="pill pill-amber">${m.cal} cal</span>
-          <span class="pill pill-blue">${m.prot}g P</span>
-          <i class="ti ti-chevron-down" aria-hidden="true" id="mchev-${i}" style="font-size:15px;color:var(--text-2)"></i>
-        </div>
+        <i class="ti ti-chevron-down" aria-hidden="true" id="mchev-${i}" style="font-size:15px;color:var(--text-2)"></i>
       </div>
       <div class="meal-body" id="mbody-${i}">
+        <div class="section-label">Hit these targets</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:6px">
+          <div style="background:var(--amber-light);border-radius:6px;padding:7px;text-align:center"><div style="font-size:10px;color:var(--amber-dark)">Cal</div><div style="font-size:14px;font-weight:700;color:var(--text)">${m.cal}</div></div>
+          <div style="background:var(--blue-light);border-radius:6px;padding:7px;text-align:center"><div style="font-size:10px;color:var(--blue-dark)">Protein</div><div style="font-size:14px;font-weight:700;color:var(--text)">${m.prot}g</div></div>
+          <div style="background:var(--gray-bg);border-radius:6px;padding:7px;text-align:center"><div style="font-size:10px;color:var(--text-2)">Carbs</div><div style="font-size:14px;font-weight:700;color:var(--text)">${m.carb}g</div></div>
+          <div style="background:var(--gray-bg);border-radius:6px;padding:7px;text-align:center"><div style="font-size:10px;color:var(--text-2)">Fat</div><div style="font-size:14px;font-weight:700;color:var(--text)">${m.fat}g</div></div>
+        </div>
+        <button class="btn btn-green" style="margin:6px 0" onclick="event.stopPropagation();logMeal(${i})"><i class="ti ti-plus" aria-hidden="true"></i> Log this meal as eaten</button>
         <div class="section-label">Ingredients</div>
         ${m.ingredients.map(([n,a])=>`<div class="ing-row"><span>${n}</span><span style="color:var(--text-2);font-size:12px">${a}</span></div>`).join('')}
         <div class="section-label" style="margin-top:10px">Steps</div>
@@ -729,21 +1046,36 @@ function renderMealCards(meals){
     </div>`).join('');
 }
 
+function logMeal(i){
+  const m=MEALS[nutUser][nutDay][i],u=nutUser;
+  if(!state[u].foods)state[u].foods=[];
+  state[u].foods.push({name:m.name,cal:m.cal,prot:m.prot,carb:m.carb,fat:m.fat,date:new Date().toLocaleDateString()});
+  state[u].foodCal=(state[u].foodCal||0)+m.cal;
+  state[u].foodProt=(state[u].foodProt||0)+m.prot;
+  state[u].foodCarb=(state[u].foodCarb||0)+m.carb;
+  state[u].foodFat=(state[u].foodFat||0)+m.fat;
+  saveState();refreshNutrition();refreshHome();
+}
+
 function toggleMeal(i){const b=document.getElementById('mbody-'+i);const c=document.getElementById('mchev-'+i);if(!b)return;const open=b.classList.toggle('open');if(c)c.style.transform=open?'rotate(180deg)':'';}
 
 function addFood(){
   const name=document.getElementById('f-name').value.trim();
   const cal=parseFloat(document.getElementById('f-cal').value)||0;
   const prot=parseFloat(document.getElementById('f-prot').value)||0;
+  const carb=parseFloat(document.getElementById('f-carb').value)||0;
+  const fat=parseFloat(document.getElementById('f-fat').value)||0;
   if(!name)return;
   const u=nutUser;
   if(!state[u].foods)state[u].foods=[];
-  state[u].foods.push({name,cal,prot,carb:0,fat:0,date:new Date().toLocaleDateString()});
+  state[u].foods.push({name,cal,prot,carb,fat,date:new Date().toLocaleDateString()});
   state[u].foodCal=(state[u].foodCal||0)+cal;
   state[u].foodProt=(state[u].foodProt||0)+prot;
+  state[u].foodCarb=(state[u].foodCarb||0)+carb;
+  state[u].foodFat=(state[u].foodFat||0)+fat;
   saveState();
-  ['f-name','f-cal','f-prot'].forEach(id=>document.getElementById(id).value='');
-  renderFoodLog();refreshHome();
+  ['f-name','f-cal','f-prot','f-carb','f-fat'].forEach(id=>document.getElementById(id).value='');
+  refreshNutrition();refreshHome();
 }
 
 function renderFoodLog(){
@@ -752,53 +1084,21 @@ function renderFoodLog(){
   const todayFoods=foods.filter(f=>f.date===today);
   const el=document.getElementById('food-log-list');
   if(!todayFoods.length){el.innerHTML='<div style="font-size:13px;color:var(--text-2);text-align:center;padding:10px 0">No food logged today</div>';return;}
-  el.innerHTML=todayFoods.map(f=>`<div class="ing-row"><span>${f.name}</span><span style="color:var(--text-2);font-size:12px">${Math.round(f.cal)} cal · ${Math.round(f.prot)}g prot</span></div>`).join('');
+  el.innerHTML=todayFoods.map((f,idx)=>`<div class="ing-row"><span>${f.name}</span><span style="display:flex;align-items:center;gap:8px"><span style="color:var(--text-2);font-size:12px">${Math.round(f.cal)} cal · ${Math.round(f.prot)}g P</span><button onclick="removeFood(${idx})" style="border:none;background:none;color:var(--text-3);cursor:pointer;font-size:14px" aria-label="Remove"><i class="ti ti-x" aria-hidden="true"></i></button></span></div>`).join('');
 }
 
-async function handlePhoto(event){
-  const file=event.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=async(e)=>{
-    const preview=document.getElementById('photo-preview');
-    preview.src=e.target.result;preview.style.display='block';
-    document.getElementById('photo-drop').style.display='none';
-    const aiBox=document.getElementById('ai-box');
-    aiBox.style.display='block';aiBox.innerHTML='<span style="color:var(--text-2)">Analyzing your meal<span class="loading-dots"></span></span>';
-    document.getElementById('photo-results').style.display='none';
-    const base64=e.target.result.split(',')[1];
-    try{
-      const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:base64}},{type:'text',text:`Analyze this meal photo and respond with these exact labels:
-DESCRIPTION: [what you see]
-CALORIES: [range] kcal
-PROTEIN: [range]g
-CARBS: [range]g
-FAT: [range]g
-CONFIDENCE: [high/medium/low] — [brief reason]
-TIP: [one recomp tip for this meal]`}]}]})});
-      const data=await resp.json();
-      const text=data.content?.[0]?.text||'';
-      const get=(label)=>{const m=text.match(new RegExp(label+':\\s*(.+)'));return m?m[1].trim():'—';};
-      const cal=get('CALORIES'),prot=get('PROTEIN'),carb=get('CARBS'),fat=get('FAT');
-      document.getElementById('r-cal').textContent=cal;
-      document.getElementById('r-prot').textContent=prot;
-      document.getElementById('r-carb').textContent=carb;
-      document.getElementById('r-fat').textContent=fat;
-      document.getElementById('photo-results').style.display='block';
-      const midVal=(range)=>{const nums=range.match(/\d+/g);return nums?Math.round(nums.reduce((a,b)=>+a+ +b,0)/nums.length):0;};
-      const u=nutUser;
-      state[u].foodCal=(state[u].foodCal||0)+midVal(cal);
-      state[u].foodProt=(state[u].foodProt||0)+midVal(prot);
-      state[u].foodCarb=(state[u].foodCarb||0)+midVal(carb);
-      state[u].foodFat=(state[u].foodFat||0)+midVal(fat);
-      if(!state[u].foods)state[u].foods=[];
-      state[u].foods.push({name:'Photo meal',cal:midVal(cal),prot:midVal(prot),carb:midVal(carb),fat:midVal(fat),date:new Date().toLocaleDateString()});
-      saveState();refreshHome();renderFoodLog();
-      aiBox.innerHTML=`<div style="margin-bottom:6px"><strong style="color:var(--text)">What I see:</strong> ${get('DESCRIPTION')}</div><div style="margin-bottom:6px"><strong style="color:var(--text)">Confidence:</strong> ${get('CONFIDENCE')}</div><div><strong style="color:var(--text)">Tip:</strong> ${get('TIP')}</div>`;
-      document.getElementById('photo-drop').style.display='block';
-      document.getElementById('photo-drop').innerHTML='<i class="ti ti-camera-plus" aria-hidden="true" style="font-size:24px;color:var(--text-2);display:block;margin-bottom:6px"></i><div style="font-size:13px;color:var(--text-2)">Tap to analyze another meal</div>';
-    }catch(err){aiBox.innerHTML='<div style="color:var(--text-2)">Could not analyze — try again with a clearer photo.</div>';}
-  };
-  reader.readAsDataURL(file);
+function removeFood(idx){
+  const u=nutUser,today=new Date().toLocaleDateString();
+  const todays=(state[u].foods||[]).filter(f=>f.date===today);
+  const f=todays[idx];
+  if(!f)return;
+  const realIdx=state[u].foods.indexOf(f);
+  if(realIdx>-1)state[u].foods.splice(realIdx,1);
+  state[u].foodCal=Math.max(0,(state[u].foodCal||0)-(f.cal||0));
+  state[u].foodProt=Math.max(0,(state[u].foodProt||0)-(f.prot||0));
+  state[u].foodCarb=Math.max(0,(state[u].foodCarb||0)-(f.carb||0));
+  state[u].foodFat=Math.max(0,(state[u].foodFat||0)-(f.fat||0));
+  saveState();refreshNutrition();refreshHome();
 }
 
 function refreshCompare(){
@@ -826,20 +1126,63 @@ function addSessionFor(u){
 }
 
 function toggleTimer(){
-  timerRunning=!timerRunning;
   const btn=document.getElementById('timer-btn');
-  if(timerRunning){
+  if(!timerRunning){
+    timerRunning=true;
+    timerEndTime=Date.now()+timerSecs*1000;
     btn.innerHTML='<i class="ti ti-player-pause" aria-hidden="true"></i> Pause';
     btn.className='btn btn-amber';
-    timerInterval=setInterval(()=>{
-      if(timerSecs<=0){clearInterval(timerInterval);timerRunning=false;btn.innerHTML='<i class="ti ti-refresh" aria-hidden="true"></i> Done';btn.className='btn btn-green';updateTimerDisp();return;}
-      timerSecs--;updateTimerDisp();
-    },1000);
-  }else{clearInterval(timerInterval);btn.innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Resume';btn.className='btn btn-green';}
+    clearInterval(timerInterval);
+    timerInterval=setInterval(tickTimer,250);
+    tickTimer();
+  }else{
+    timerRunning=false;
+    clearInterval(timerInterval);
+    timerSecs=Math.max(0,Math.round((timerEndTime-Date.now())/1000));
+    btn.innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Resume';
+    btn.className='btn btn-green';
+    updateTimerDisp();
+  }
 }
 
-function adjTimer(d){timerSecs=Math.max(0,timerSecs+d);timerMax=Math.max(timerMax,timerSecs);updateTimerDisp();}
-function setPreset(s){clearInterval(timerInterval);timerRunning=false;timerSecs=s;timerMax=s;document.getElementById('timer-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start';document.getElementById('timer-btn').className='btn btn-green';updateTimerDisp();}
+function tickTimer(){
+  const btn=document.getElementById('timer-btn');
+  timerSecs=Math.max(0,Math.round((timerEndTime-Date.now())/1000));
+  updateTimerDisp();
+  if(timerSecs<=0){
+    clearInterval(timerInterval);timerRunning=false;
+    btn.innerHTML='<i class="ti ti-refresh" aria-hidden="true"></i> Done';btn.className='btn btn-green';
+    try{if(navigator.vibrate)navigator.vibrate([200,100,200]);}catch(e){}
+    try{beepTimer();}catch(e){}
+  }
+}
+
+let audioCtx=null;
+function beepTimer(){
+  if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  for(let i=0;i<3;i++){
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);
+    o.frequency.value=880;o.type='sine';
+    const t=audioCtx.currentTime+i*0.25;
+    g.gain.setValueAtTime(0.001,t);g.gain.exponentialRampToValueAtTime(0.3,t+0.02);g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+    o.start(t);o.stop(t+0.2);
+  }
+}
+
+// Resync timer when app returns from background / screen unlock
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&timerRunning){tickTimer();}
+  if(!document.hidden&&sessionActive){tickSession();}
+});
+
+function adjTimer(d){
+  timerSecs=Math.max(0,timerSecs+d);
+  timerMax=Math.max(timerMax,timerSecs);
+  if(timerRunning)timerEndTime=Date.now()+timerSecs*1000;
+  updateTimerDisp();
+}
+function setPreset(s){clearInterval(timerInterval);timerRunning=false;timerSecs=s;timerMax=s;timerEndTime=null;document.getElementById('timer-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start';document.getElementById('timer-btn').className='btn btn-green';updateTimerDisp();}
 function updateTimerDisp(){
   const m=Math.floor(timerSecs/60),s=timerSecs%60;
   document.getElementById('timer-disp').textContent=m+':'+String(s).padStart(2,'0');
