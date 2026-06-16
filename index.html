@@ -116,6 +116,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
 .lift-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);gap:8px}
 .lift-row:last-child{border-bottom:none}
 .lift-inp{width:70px;border:0.5px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;text-align:center;background:var(--card-bg);color:var(--text);-webkit-appearance:none}
+@keyframes timerFlash{0%,100%{color:var(--red)}50%{color:var(--text)}}
+@keyframes timerFlashBg{0%,100%{background:var(--red)}50%{background:#c73333}}
+#rest-complete-banner{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--red);color:#fff;padding:24px 32px;border-radius:var(--radius);font-size:28px;font-weight:700;text-align:center;z-index:500;box-shadow:0 8px 32px rgba(226,75,74,0.4);cursor:pointer;min-width:260px}
+.rpe-info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--blue-light);color:var(--blue-dark);font-size:10px;cursor:pointer;margin-left:3px;font-style:normal;border:0.5px solid #85B7EB;vertical-align:middle;line-height:1}
+#rpe-popup{display:none;position:fixed;background:var(--card-bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;font-size:13px;z-index:401;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-width:260px;left:50%;transform:translateX(-50%);top:50%;margin-top:-110px}
+#rpe-popup-overlay{display:none;position:fixed;inset:0;z-index:400}
+#float-timer{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom) + 4px);right:16px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#float-timer-btn{background:var(--card-bg);border:0.5px solid var(--border);border-radius:var(--radius-pill);padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.12);-webkit-appearance:none}
+#float-timer-btn.running{background:var(--amber-light);border-color:#FAC775;color:var(--amber-dark)}
+#float-timer-btn.done{background:#FCEBEB;border-color:var(--red);color:var(--red);animation:timerFlash 0.5s ease-in-out infinite}
+#float-presets{background:var(--card-bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;display:none;box-shadow:0 2px 12px rgba(0,0,0,0.12)}
+#float-presets button{display:block;width:100%;text-align:center;padding:7px 16px;border:none;background:none;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;border-radius:6px;-webkit-appearance:none}
+.ex-checkoff{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.ex-checkoff-btn{padding:8px 16px;border-radius:var(--radius-sm);border:0.5px solid var(--border);background:var(--card-bg);color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer;-webkit-appearance:none}
+.ex-checkoff-btn.on{background:var(--green-light);border-color:#97C459;color:var(--green-dark)}
+.timed-set-row{display:flex;align-items:center;gap:8px;margin-top:6px;padding:6px 0;border-bottom:0.5px solid var(--border)}
+.timed-set-row:last-child{border-bottom:none}
+.timed-countdown{font-size:22px;font-weight:700;color:var(--blue-dark);font-variant-numeric:tabular-nums;min-width:48px;text-align:center}
 </style>
 </head>
 <body>
@@ -198,6 +216,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
     <button class="toggle-btn" id="phase-2-btn" onclick="selectPhase('2',this)">Phase 2</button>
     <button class="toggle-btn" id="phase-3-btn" onclick="selectPhase('3',this)">Phase 3</button>
     <button class="toggle-btn" id="phase-4-btn" onclick="selectPhase('4',this)">Phase 4</button>
+  </div>
+
+  <div class="section-label">Week</div>
+  <div class="toggle-row" id="week-toggle">
+    <button class="toggle-btn active" id="week-1-btn" onclick="selectWeek('1',this)">Week 1</button>
+    <button class="toggle-btn" id="week-2-btn" onclick="selectWeek('2',this)">Week 2</button>
+    <button class="toggle-btn" id="week-3-btn" onclick="selectWeek('3',this)">Week 3</button>
   </div>
 
   <div class="section-label">Day</div>
@@ -365,7 +390,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
 
   <div class="card" style="text-align:center">
     <div style="font-size:13px;color:var(--text-2);margin-bottom:4px" id="timer-ctx">Rest between sets</div>
-    <div class="timer-big" id="timer-disp">1:30</div>
+    <div class="timer-big" id="timer-disp" style="transition:color 0.3s">1:30</div>
     <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
     <div class="btn-row" style="justify-content:center;margin-bottom:12px">
       <button class="btn" style="width:auto;padding:10px 20px" onclick="adjTimer(-15)">−15s</button>
@@ -435,6 +460,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
   </div>
 </div>
 
+<!-- REST COMPLETE BANNER -->
+<div id="rest-complete-banner" onclick="dismissRestBanner()">
+  <div>REST COMPLETE</div>
+  <div style="font-size:14px;font-weight:400;margin-top:8px;opacity:0.9">Tap to dismiss</div>
+</div>
+
+<!-- RPE POPUP -->
+<div id="rpe-popup-overlay" onclick="closeRpePopup()"></div>
+<div id="rpe-popup">
+  <div style="font-weight:600;margin-bottom:10px;color:var(--text)">RPE Guide — Rate of Perceived Exertion</div>
+  <div style="display:grid;gap:6px">
+    <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-weight:700;color:var(--green-dark);min-width:40px;font-size:13px">RPE 6</span><span style="color:var(--text-2);font-size:12px">Easy — could do 4+ more reps</span></div>
+    <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-weight:700;color:var(--green-dark);min-width:40px;font-size:13px">RPE 7</span><span style="color:var(--text-2);font-size:12px">Could do 2–3 more reps</span></div>
+    <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-weight:700;color:var(--amber-dark);min-width:40px;font-size:13px">RPE 8</span><span style="color:var(--text-2);font-size:12px">Could do 1–2 more reps</span></div>
+    <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-weight:700;color:var(--amber-dark);min-width:40px;font-size:13px">RPE 9</span><span style="color:var(--text-2);font-size:12px">1 more rep max — form still perfect</span></div>
+    <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-weight:700;color:var(--red);min-width:40px;font-size:13px">RPE 10</span><span style="color:var(--text-2);font-size:12px">Absolute max — nothing left in the tank</span></div>
+  </div>
+</div>
+
+<!-- FLOATING BOTTOM TIMER -->
+<div id="float-timer">
+  <div id="float-presets">
+    <button onclick="startFloatTimer(45)">45s — arms</button>
+    <button onclick="startFloatTimer(90)">90s — upper</button>
+    <button onclick="startFloatTimer(120)">2 min — lower</button>
+    <button onclick="startFloatTimer(180)">3 min — heavy</button>
+  </div>
+  <button id="float-timer-btn" onclick="floatTimerTap()">
+    <i class="ti ti-clock" aria-hidden="true"></i>
+    <span id="float-timer-label">Rest</span>
+  </button>
+</div>
+
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="nav-item active" id="nav-home" onclick="goScreen('home')"><i class="ti ti-home" aria-hidden="true"></i>Home</button>
@@ -452,7 +510,7 @@ const PHASE_INFO = {
   '4':{name:'Phase 4 · Golf peak',months:'Month 6',focus:'Explosive power + speed'}
 };
 
-const PHASES = {
+const PHASES_W1 = {
   '1':{
     A:{sections:[
       {label:"Warm-up",mins:15,exercises:[
@@ -725,8 +783,358 @@ const PHASES = {
     ]}
   }
 };
-let currentPhase='1';
-const DAYS_DATA = PHASES[currentPhase];
+
+// Week 2 and 3 main working sections only (warm-up/mobility/conditioning/cool-down are shared from W1)
+const PHASES_MAIN = {
+'1':{
+'2':{
+A:[
+{label:"Superset A — Dumbbell bench + Barbell row",mins:18,exercises:[
+{"name":"Dumbbell bench press","rx":"4×6-8 · RPE 8","sets":4,"rest":90,"cues":["Feet flat, natural arch — controlled descent, drive up","Keep wrists stacked over elbows, squeeze chest at the top"],"vid":"dumbbell+bench+press+form+tutorial"},
+{"name":"Barbell row (overhand)","rx":"4×6-8 · RPE 8 · rest 90s","sets":4,"rest":90,"cues":["Hinge to 45°, overhand grip — pull bar to lower chest","Control the descent, avoid jerking with momentum"],"vid":"barbell+row+overhand+grip+form+tutorial"}
+]},
+{label:"Superset B — Arnold press + Straight arm pulldown",mins:14,exercises:[
+{"name":"Arnold press","rx":"3×10 · RPE 7","sets":3,"rest":90,"cues":["Start palms facing you, rotate out as you press — full range","Controlled tempo, don't lock out elbows at top"],"vid":"arnold+press+form+tutorial+dumbbell"},
+{"name":"Straight arm pulldown","rx":"3×12 · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["Arms straight, hinge at shoulder — pull bar to thighs","Feel the lat stretch at top, squeeze at the bottom"],"vid":"straight+arm+pulldown+lat+form+tutorial"}
+]},
+{label:"Superset C — Face pull + EZ bar curl + Overhead tricep",mins:14,exercises:[
+{"name":"Cable face pull","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Cable at forehead height, elbows high and wide — spread rope at face","Never skip — your shoulder health insurance every session"],"vid":"cable+face+pull+form+tutorial+shoulder+health"},
+{"name":"EZ bar curl","rx":"3×10 · RPE 7","sets":3,"rest":60,"cues":["Narrow grip on EZ bar reduces wrist strain — full range of motion","Squeeze at the top, lower under control — 2 sec descent"],"vid":"ez+bar+curl+form+tutorial"},
+{"name":"Overhead tricep extension (cable or DB)","rx":"3×12 · RPE 7 · rest 60s","sets":3,"rest":60,"cues":["Elbows close to head, full stretch at the bottom — long head emphasis","Control the return, don't let weight crash"],"vid":"overhead+tricep+extension+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Hollow body hold","rx":"3×30s · rest 45s","sets":3,"rest":45,"cues":["Lower back pressed into floor, arms and legs hovering — hold the tension","Bend knees to regress if you can't hold full position"],"vid":"hollow+body+hold+core+form+tutorial"},
+{"name":"Pallof press (kneeling)","rx":"3×12 each side · rest 45s","sets":3,"rest":45,"cues":["Kneel perpendicular to cable — brace and press, resist rotation the whole time","Exhale on the press, hold 1 second before returning"],"vid":"kneeling+pallof+press+anti+rotation+core"},
+{"name":"RKC plank","rx":"3×30s · rest 45s","sets":3,"rest":45,"cues":["Squeeze everything — fists, glutes, quads, abs — as hard as possible","Breathe steadily — this is intense isometric effort"],"vid":"RKC+plank+form+tutorial+core"}
+]}
+],
+B:[
+{label:"Primary A — Trap bar deadlift",mins:19,exercises:[
+{"name":"Trap bar deadlift","rx":"4×5 · RPE 8 · rest 3 min","sets":4,"rest":180,"cues":["Hips back, chest up — drive the floor away rather than pulling up","More upright torso than conventional — protects the lower back"],"vid":"trap+bar+deadlift+form+tutorial+lower+back+safe"}
+]},
+{label:"Superset B — Leg press + Nordic curl",mins:20,exercises:[
+{"name":"Leg press heavy (feet high)","rx":"4×8 · RPE 8","sets":4,"rest":120,"cues":["Feet high on the platform — targets hamstrings and glutes more","Full range, don't lock knees — keep tension throughout"],"vid":"leg+press+high+foot+placement+form+tutorial"},
+{"name":"Nordic curl","rx":"3×6 · RPE 8 · rest 2 min","sets":3,"rest":120,"cues":["Lower as slowly as possible — use hands to catch yourself at the bottom","Eccentric-only is fine; the lowering phase builds hamstring strength"],"vid":"nordic+hamstring+curl+form+tutorial"}
+]},
+{label:"Accessory — Abductors + Calves",mins:11,exercises:[
+{"name":"Cable hip abduction","rx":"3×15 each side · rest 60s","sets":3,"rest":60,"cues":["Slight forward hip lean — control the return, don't let cable snap back","Strengthens glute medius — important for knee and lower back health"],"vid":"cable+hip+abduction+form+tutorial"},
+{"name":"Single leg calf raise","rx":"3×15 each side · rest 60s","sets":3,"rest":60,"cues":["Full range — heel below step going down, full extension at top","One leg forces more effort — add weight once 15 reps is easy"],"vid":"single+leg+calf+raise+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Hollow body hold","rx":"3×30s","sets":3,"rest":45,"cues":["Lower back pressed into floor, arms and legs hovering — hold the tension","Bend knees to regress if you can't hold full position"],"vid":"hollow+body+hold+core+form+tutorial"},
+{"name":"Farmers carry","rx":"3×30m","sets":3,"rest":45,"cues":["Heavy dumbbells, walk tall — don't lean to either side","Core resists the load — one of the best lower back strengtheners"],"vid":"farmers+carry+form+tutorial+core"},
+{"name":"Bird dog","rx":"3×10 each side","sets":3,"rest":30,"cues":["Opposite arm and leg, slow and controlled — keep hips square","Anti-rotation core that reinforces a stable spine"],"vid":"bird+dog+exercise+core+form"}
+]}
+]
+},
+'3':{
+A:[
+{label:"Superset A — Cable chest fly + Single arm row",mins:16,exercises:[
+{"name":"Cable chest fly","rx":"4×12 · RPE 7","sets":4,"rest":90,"cues":["Slight elbow bend throughout — squeeze chest at the center","Control the stretch at end range — don't overextend shoulders"],"vid":"cable+chest+fly+form+tutorial"},
+{"name":"Single arm dumbbell row","rx":"4×12 each side · RPE 7 · rest 90s","sets":4,"rest":90,"cues":["Brace on a bench, row to your hip — full range each rep","Don't rotate excessively — keep hips and shoulders square"],"vid":"single+arm+dumbbell+row+form+tutorial"}
+]},
+{label:"Superset B — Lateral raise + Cable pull apart",mins:12,exercises:[
+{"name":"Lateral raise","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Lead with elbows, slight forward lean — stop at shoulder height","Control the lowering — don't let them drop"],"vid":"dumbbell+lateral+raise+form+tutorial"},
+{"name":"Cable pull apart","rx":"3×15 · RPE 6 · rest 60s","sets":3,"rest":60,"cues":["Arms at chest height, pull apart — squeeze shoulder blades at end","Controlled return — feel the stretch across the chest"],"vid":"cable+pull+apart+form+tutorial"}
+]},
+{label:"Superset C — Rear delt fly + Concentration curl + Tricep extension",mins:14,exercises:[
+{"name":"Reverse fly rear delt","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Slight elbow bend, lead with elbows out — feel rear delts squeeze","Light weight, full range — rear delts respond to higher reps"],"vid":"dumbbell+reverse+fly+rear+delt+form"},
+{"name":"Concentration curl","rx":"3×12 · RPE 7","sets":3,"rest":60,"cues":["Elbow braced on inner thigh, curl to shoulder — peak contraction","No swinging — this is pure bicep isolation"],"vid":"concentration+curl+form+tutorial"},
+{"name":"Overhead tricep extension (cable or DB)","rx":"3×12 · RPE 7 · rest 60s","sets":3,"rest":60,"cues":["Elbows close to head, full stretch at the bottom — long head emphasis","Control the return, don't let weight crash"],"vid":"overhead+tricep+extension+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Stir the pot","rx":"3×10 each direction","sets":3,"rest":45,"cues":["Forearms on stability ball, make small circles — brace the whole time","Keep hips level and breathe steadily throughout"],"vid":"stir+the+pot+plank+core+exercise+form"},
+{"name":"Landmine oblique twist","rx":"3×10 each side · rest 45s","sets":3,"rest":45,"cues":["Hold bar at chest, rotate around your center — arms stay extended","Power comes from hips and obliques, not the arms"],"vid":"landmine+oblique+twist+core+exercise"},
+{"name":"Side plank","rx":"3×30s each side · rest 30s","sets":3,"rest":30,"cues":["Stack the hips, brace hard — straight line head to heels","Trains the obliques and lateral core stability"],"vid":"side+plank+form+tutorial+core"}
+]}
+],
+B:[
+{label:"Superset A — Heel-elevated goblet squat + Lying hamstring curl",mins:20,exercises:[
+{"name":"Heel-elevated goblet squat","rx":"4×12 · RPE 7","sets":4,"rest":120,"cues":["Heels on small plates or wedge — allows deeper knee bend, more quad emphasis","Dumbbell at chest, 3-sec descent — keep chest tall throughout"],"vid":"heel+elevated+goblet+squat+form+tutorial"},
+{"name":"Lying hamstring curl","rx":"3×15 · RPE 7 · rest 2 min","sets":3,"rest":120,"cues":["Full range of motion — pause briefly at peak contraction","Control the return — don't let the weight crash down"],"vid":"lying+hamstring+curl+form+tutorial"}
+]},
+{label:"Superset B — Single leg RDL + Reverse lunge",mins:18,exercises:[
+{"name":"Single leg RDL","rx":"4×10 each side · RPE 7","sets":4,"rest":90,"cues":["Balance and hamstring — same hip hinge but on one leg","Keep hips square, feel the hamstring stretch at the bottom"],"vid":"single+leg+romanian+deadlift+form"},
+{"name":"Reverse lunge","rx":"3×12 each side · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["Step back, knee hovers above floor — front shin stays vertical","Drive through the front heel to return — builds unilateral stability"],"vid":"reverse+lunge+form+tutorial"}
+]},
+{label:"Accessory — Calves + Carries",mins:10,exercises:[
+{"name":"Seated calf raise","rx":"3×20","sets":3,"rest":45,"cues":["Full range — stretch at bottom, squeeze at top — slow and deliberate","Seated isolates the soleus more than standing"],"vid":"seated+calf+raise+form+tutorial"},
+{"name":"Bear crawl","rx":"3×20m","sets":3,"rest":45,"cues":["Hands and toes, knees hover 1 inch off floor — move contralaterally","Slow and controlled — core stability and shoulder coordination"],"vid":"bear+crawl+exercise+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"McGill curl up","rx":"3×8 each side","sets":3,"rest":45,"cues":["One knee bent, hands under lower back — tiny crunch, neck neutral","This builds spinal stability without compressing the discs"],"vid":"mcgill+curl+up+form+tutorial+spine"},
+{"name":"Landmine oblique twist","rx":"3×10 each side · rest 45s","sets":3,"rest":45,"cues":["Hold bar at chest, rotate around your center — arms stay extended","Power comes from hips and obliques, not the arms"],"vid":"landmine+oblique+twist+core+exercise"},
+{"name":"Hollow body hold","rx":"3×30s","sets":3,"rest":45,"cues":["Lower back pressed into floor, arms and legs hovering — hold the tension","Bend knees to regress if you can't hold full position"],"vid":"hollow+body+hold+core+form+tutorial"}
+]}
+]
+}
+},
+'2':{
+'2':{
+A:[
+{label:"Superset A — DB/Machine bench + Pendlay row",mins:22,exercises:[
+{"name":"Dumbbell bench press or chest press machine","rx":"4×5 · RPE 8-9","sets":4,"rest":150,"cues":["Heavier than week 1 — controlled descent, explosive drive up","Spot yourself on DBs or use a machine for safety at high RPE"],"vid":"dumbbell+bench+press+form+tutorial"},
+{"name":"Pendlay row","rx":"4×5 · RPE 8-9 · rest 2-3 min","sets":4,"rest":150,"cues":["Bar dead on the floor each rep — explosive pull to lower chest","Horizontal back angle, brace hard — this is a power row"],"vid":"pendlay+row+form+tutorial+barbell"}
+]},
+{label:"Superset B — Push press + Weighted chin up",mins:16,exercises:[
+{"name":"Push press","rx":"3×6 · RPE 8","sets":3,"rest":90,"cues":["Slight knee dip, drive through legs to initiate the press — lock out overhead","Don't rebend knees on the way down — strict descent"],"vid":"push+press+form+tutorial+barbell"},
+{"name":"Weighted chin up","rx":"3×6 · RPE 8 · rest 90s","sets":3,"rest":90,"cues":["Supinated (underhand) grip — full hang to chin over bar","Add weight via belt or vest — control the descent"],"vid":"weighted+chin+up+form+tutorial"}
+]},
+{label:"Accessory — Delts + Arms",mins:14,exercises:[
+{"name":"Cable face pull","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Cable at forehead height, elbows high and wide — spread rope at face","Never skip — your shoulder health insurance every session"],"vid":"cable+face+pull+form+tutorial+shoulder+health"},
+{"name":"Incline dumbbell curl","rx":"3×8 · RPE 7","sets":3,"rest":60,"cues":["Incline stretches the bicep at the bottom — don't rush the lowering phase","Elbows back, curl to shoulder — peak squeeze"],"vid":"incline+dumbbell+curl+form+tutorial"},
+{"name":"Skull crusher EZ bar","rx":"3×8 · RPE 7","sets":3,"rest":60,"cues":["Lower bar toward forehead with control — elbows point straight up","Press back up without flaring elbows — tricep focused"],"vid":"skull+crusher+ez+bar+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Cable crunch","rx":"3×15 · RPE 7","sets":3,"rest":45,"cues":["Kneel facing cable, crunch toward thighs — don't pull with the arms","Feel the abs do the work — controlled return each rep"],"vid":"cable+crunch+form+tutorial+abs"},
+{"name":"Tall kneeling Pallof press","rx":"3×12 each side","sets":3,"rest":45,"cues":["Kneel tall — no hip hinge allowed — press and hold 1 second","The kneeling removes the hip from the equation — pure anti-rotation"],"vid":"tall+kneeling+pallof+press+core+tutorial"},
+{"name":"Hollow body hold","rx":"3×30s","sets":3,"rest":45,"cues":["Lower back pressed into floor, arms and legs hovering — hold the tension","Bend knees to regress if needed"],"vid":"hollow+body+hold+core+form+tutorial"}
+]}
+],
+B:[
+{label:"Primary — Trap bar deadlift",mins:19,exercises:[
+{"name":"Trap bar deadlift","rx":"4×4 · RPE 9 · rest 3 min","sets":4,"rest":180,"cues":["Near-maximal effort — focus, brace hard, drive the floor away","Same form as always — speed may drop slightly at this RPE, that's fine"],"vid":"trap+bar+deadlift+form+tutorial+lower+back+safe"}
+]},
+{label:"Superset B — Hack squat + Glute ham raise",mins:20,exercises:[
+{"name":"Hack squat or leg press","rx":"4×6 · RPE 8","sets":4,"rest":120,"cues":["Hack squat machine — shoulder-width stance, control the descent","Full range of motion — knees track over toes throughout"],"vid":"hack+squat+machine+form+tutorial"},
+{"name":"Glute ham raise","rx":"3×8 · RPE 8 · rest 2 min","sets":3,"rest":120,"cues":["Lower under control, use hamstrings to pull back up — or use arms to assist","One of the best posterior chain builders — earn each rep"],"vid":"glute+ham+raise+form+tutorial"}
+]},
+{label:"Accessory — Posterior chain + Carries",mins:11,exercises:[
+{"name":"Cable pull through","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Hip hinge pattern — same as RDL, cable teaches the feel of hip drive","Squeeze glutes hard at the top, don't overarch"],"vid":"cable+pull+through+form+tutorial"},
+{"name":"Suitcase carry heavier","rx":"3×40m","sets":3,"rest":60,"cues":["Heavier than Phase 1 — walk tall, look like you're carrying nothing","Core resists the lateral pull the whole 40 meters"],"vid":"suitcase+carry+core+stability+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Hollow body hold","rx":"3×30s","sets":3,"rest":45,"cues":["Lower back pressed into floor, arms and legs hovering — hold the tension","Bend knees to regress if needed"],"vid":"hollow+body+hold+core+form+tutorial"},
+{"name":"Bear crawl","rx":"3×20m","sets":3,"rest":45,"cues":["Hands and toes, knees hover 1 inch off floor — move contralaterally","Slow and controlled — core stability and shoulder coordination"],"vid":"bear+crawl+exercise+form+tutorial"},
+{"name":"McGill curl up","rx":"3×8 each side","sets":3,"rest":45,"cues":["One knee bent, hands under lower back — tiny crunch, neck neutral","Builds spinal stability without compressing the discs"],"vid":"mcgill+curl+up+form+tutorial+spine"}
+]}
+]
+},
+'3':{
+A:[
+{label:"Superset A — DB floor press + Chest supported row",mins:18,exercises:[
+{"name":"Dumbbell floor press","rx":"4×10 · RPE 7","sets":4,"rest":90,"cues":["Lying on floor limits range — safer for shoulder, still heavy work","Drive up explosively, lower with 3-sec control to floor"],"vid":"dumbbell+floor+press+form+tutorial"},
+{"name":"Chest supported row","rx":"4×10 · RPE 7 · rest 90s","sets":4,"rest":90,"cues":["Chest on an incline bench — takes lower back completely out of the equation","Full range, squeeze shoulder blades at the top"],"vid":"chest+supported+row+form+tutorial"}
+]},
+{label:"Superset B — Single arm OH press + Neutral grip pulldown",mins:14,exercises:[
+{"name":"Single arm overhead press","rx":"3×10 each side · RPE 7","sets":3,"rest":90,"cues":["Press strictly — no lean to either side, brace the obliques","Single arm exposes any left-right imbalances — use them as feedback"],"vid":"single+arm+overhead+press+form+tutorial"},
+{"name":"Neutral grip pulldown","rx":"3×12 · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["Neutral grip (palms facing) — drive elbows down toward hips","Lean back slightly, stretch fully at the top between reps"],"vid":"neutral+grip+lat+pulldown+form+tutorial"}
+]},
+{label:"Accessory — Face pull + Curl + Dip",mins:14,exercises:[
+{"name":"Cable face pull","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Cable at forehead height, elbows high and wide — spread rope at face","Never skip — your shoulder health insurance every session"],"vid":"cable+face+pull+form+tutorial+shoulder+health"},
+{"name":"Cable curl","rx":"3×12 · RPE 7","sets":3,"rest":60,"cues":["Cable keeps constant tension through the full range — don't rush it","Squeeze at the top, 2-sec lowering"],"vid":"cable+curl+bicep+form+tutorial"},
+{"name":"Dip (weighted if possible)","rx":"3×10 · RPE 7","sets":3,"rest":60,"cues":["Elbows tucked, lean slightly forward for more chest — full dip depth","Add weight via belt or vest if bodyweight is too easy"],"vid":"dip+weighted+form+tutorial+chest+tricep"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Reverse crunch","rx":"3×15","sets":3,"rest":45,"cues":["Curl pelvis toward ribs — lower back lifts off the floor, not the hips","Control the lowering — don't let legs crash down"],"vid":"reverse+crunch+form+tutorial+lower+abs"},
+{"name":"Landmine oblique twist","rx":"3×10 each side · rest 45s","sets":3,"rest":45,"cues":["Hold bar at chest, rotate around your center — arms stay extended","Power comes from hips and obliques, not the arms"],"vid":"landmine+oblique+twist+core+exercise"},
+{"name":"Stir the pot","rx":"3×10 each direction","sets":3,"rest":45,"cues":["Forearms on stability ball, make small circles — brace the whole time","Keep hips level and breathe steadily throughout"],"vid":"stir+the+pot+plank+core+exercise+form"}
+]}
+],
+B:[
+{label:"Superset A — Heel goblet squat heavy + RDL pause",mins:20,exercises:[
+{"name":"Heel-elevated goblet squat heavy","rx":"4×8 · RPE 7","sets":4,"rest":120,"cues":["Heavier than week 1 — same 3-sec descent, still control the whole rep","Feel the quads burn — this is the prime mover today"],"vid":"heel+elevated+goblet+squat+form+tutorial"},
+{"name":"Romanian deadlift pause at bottom","rx":"4×8 · RPE 7 · rest 2 min","sets":4,"rest":120,"cues":["Pause 1 sec at full hamstring stretch — maximizes time under tension","Don't round the lower back at the bottom — hinge stays perfect"],"vid":"romanian+deadlift+form+tutorial+hamstring"}
+]},
+{label:"Superset B — Walking lunge + Leg extension",mins:16,exercises:[
+{"name":"Walking lunge","rx":"3×12 each side · RPE 7","sets":3,"rest":90,"cues":["Long stride — front shin vertical, torso upright throughout","Drive through the front heel, bring back foot through to next step"],"vid":"walking+lunge+form+tutorial"},
+{"name":"Leg extension","rx":"3×15 · RPE 6 · rest 90s","sets":3,"rest":90,"cues":["Full extension at the top, 1-sec pause — quad isolation","Lower under control — 2-3 sec descent"],"vid":"leg+extension+machine+form+tutorial"}
+]},
+{label:"Accessory — Calves + Carries",mins:10,exercises:[
+{"name":"Single leg calf raise","rx":"3×20 each side","sets":3,"rest":45,"cues":["Full range — heel below step going down, full extension at top","One leg forces more effort — add weight once 20 reps is easy"],"vid":"single+leg+calf+raise+form+tutorial"},
+{"name":"Farmers carry","rx":"3×40m","sets":3,"rest":45,"cues":["Heavier than Phase 1 — walk tall, don't lean to either side","Core resists the bilateral load — excellent for strength and conditioning"],"vid":"farmers+carry+form+tutorial+core"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"McGill curl up","rx":"3×8 each side","sets":3,"rest":45,"cues":["One knee bent, hands under lower back — tiny crunch, neck neutral","Builds spinal stability without compressing the discs"],"vid":"mcgill+curl+up+form+tutorial+spine"},
+{"name":"Reverse crunch","rx":"3×15","sets":3,"rest":45,"cues":["Curl pelvis toward ribs — lower back lifts off the floor, not the hips","Control the lowering — don't let legs crash down"],"vid":"reverse+crunch+form+tutorial+lower+abs"},
+{"name":"Stir the pot","rx":"3×10 each direction","sets":3,"rest":45,"cues":["Forearms on stability ball, make small circles — brace the whole time","Keep hips level and breathe steadily throughout"],"vid":"stir+the+pot+plank+core+exercise+form"}
+]}
+]
+}
+},
+'3':{
+'2':{
+A:[
+{label:"Superset A — Cable wood chop low-to-high + Med ball side throw",mins:16,exercises:[
+{"name":"Cable wood chop (low to high)","rx":"4×10 each side · RPE 7","sets":4,"rest":90,"cues":["Rotate from hips first, core then arms — this IS the golf swing pattern","Don't arm-pull it — power comes from the ground up"],"vid":"cable+wood+chop+low+to+high+rotational+form"},
+{"name":"Med ball side throw against wall","rx":"4×8 each side · explosive · rest 90s","sets":4,"rest":90,"cues":["Load into back hip, rotate and throw hard — catch and repeat","Explosive intent every rep — don't pace yourself"],"vid":"medicine+ball+side+throw+wall+rotational+power"}
+]},
+{label:"Superset B — Single arm landmine press + Half kneeling cable row",mins:14,exercises:[
+{"name":"Single arm landmine press","rx":"3×10 each side · RPE 7","sets":3,"rest":90,"cues":["Press across body with slight rotation — mimics late follow-through","Power through the rotation, control the return"],"vid":"single+arm+landmine+press+rotational+form"},
+{"name":"Half kneeling cable row","rx":"3×12 each side · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["Half kneeling forces anti-rotation — row to hip, stay tall","The unstable base reveals core weaknesses — stay square"],"vid":"half+kneeling+cable+row+form+tutorial"}
+]},
+{label:"Superset C — Face pull + Rotational Pallof press",mins:12,exercises:[
+{"name":"Cable face pull","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Every session — keeps rotator cuff healthy","Elbows high and wide, spread at the face"],"vid":"cable+face+pull+form+tutorial+shoulder+health"},
+{"name":"Tall kneeling Pallof press rotational","rx":"3×10 each side · rest 60s","sets":3,"rest":60,"cues":["Press, rotate 45° toward cable, return — resist the pull throughout","Slow and controlled the whole way — train the deceleration too"],"vid":"rotational+pallof+press+core+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Stir the pot","rx":"3×10 each direction","sets":3,"rest":45,"cues":["Forearms on stability ball, make small circles — brace the whole time","Keep hips level and breathe steadily throughout"],"vid":"stir+the+pot+plank+core+exercise+form"},
+{"name":"Hollow body hold","rx":"3×30s","sets":3,"rest":45,"cues":["Lower back pressed into floor, arms and legs hovering — hold the tension","Bend knees to regress if needed"],"vid":"hollow+body+hold+core+form+tutorial"},
+{"name":"Landmine oblique twist","rx":"3×10 each side","sets":3,"rest":45,"cues":["Hold bar at chest, rotate around your center — arms stay extended","Power comes from hips and obliques, not the arms"],"vid":"landmine+oblique+twist+core+exercise"}
+]}
+],
+B:[
+{label:"Primary — Hip thrust heavy",mins:17,exercises:[
+{"name":"Hip thrust heavy","rx":"5×5 · RPE 9 · rest 3 min","sets":5,"rest":180,"cues":["Drive hips to full extension — maximum glute contraction at the top","Near-maximal effort — set up carefully, brace hard before each rep"],"vid":"barbell+hip+thrust+form+tutorial+glutes"}
+]},
+{label:"Superset B — Bulgarian split squat heavy + Lateral band walk",mins:18,exercises:[
+{"name":"Bulgarian split squat heavier","rx":"4×6 each side · RPE 8","sets":4,"rest":90,"cues":["Heavier than Phase 1 — controlled descent, drive up with more intent","Still rock solid on form even as load increases"],"vid":"bulgarian+split+squat+form+tutorial"},
+{"name":"Lateral band walk (heavy band)","rx":"3×20 each side · rest 90s","sets":3,"rest":90,"cues":["Heavier band, stay low — controlled steps, feel glute medius working","Don't let knees cave inward at any point"],"vid":"lateral+band+walk+glute+activation+tutorial"}
+]},
+{label:"Superset C — Single leg RDL weighted + Seated calf raise",mins:14,exercises:[
+{"name":"Single leg RDL weighted","rx":"4×8 each side · RPE 7","sets":4,"rest":90,"cues":["Dumbbell in opposite hand — feel the hamstring stretch at the bottom","Keep hips square, controlled — balance and posterior chain"],"vid":"single+leg+romanian+deadlift+form"},
+{"name":"Seated calf raise","rx":"3×20 · rest 90s","sets":3,"rest":90,"cues":["Full range — stretch at bottom, squeeze at top — slow and deliberate","Seated isolates the soleus more than standing"],"vid":"seated+calf+raise+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Cable crunch","rx":"3×15 · RPE 7","sets":3,"rest":45,"cues":["Kneel facing cable, crunch toward thighs — don't pull with the arms","Feel the abs do the work — controlled return each rep"],"vid":"cable+crunch+form+tutorial+abs"},
+{"name":"Farmers carry","rx":"3×30m","sets":3,"rest":45,"cues":["Heavy dumbbells, walk tall — don't lean to either side","Core resists the bilateral load — excellent for conditioning"],"vid":"farmers+carry+form+tutorial+core"},
+{"name":"Reverse crunch","rx":"3×15","sets":3,"rest":45,"cues":["Curl pelvis toward ribs — lower back lifts off the floor, not the hips","Control the lowering — don't let legs crash down"],"vid":"reverse+crunch+form+tutorial+lower+abs"}
+]}
+]
+},
+'3':{
+A:[
+{label:"Superset A — Landmine rotation + Med ball chest pass",mins:16,exercises:[
+{"name":"Landmine rotation","rx":"4×12 each side · RPE 7","sets":4,"rest":90,"cues":["Rotate the bar around your centerline — hips initiate, core transfers","Load the back hip, drive through — same sequence as the downswing"],"vid":"landmine+rotation+exercise+golf+power+form"},
+{"name":"Med ball chest pass wall","rx":"4×8 · explosive · rest 90s","sets":4,"rest":90,"cues":["Stand a foot from the wall, press hard — catch and repeat immediately","Arms-and-chest power — explosive intent every rep"],"vid":"medicine+ball+chest+pass+wall+explosive+form"}
+]},
+{label:"Superset B — Alternating DB press + Renegade row",mins:14,exercises:[
+{"name":"Dumbbell press alternating","rx":"3×12 each side · RPE 7","sets":3,"rest":90,"cues":["Press one dumbbell at a time — requires more core stability to resist rotation","Keep the non-pressing arm stable at chest height"],"vid":"alternating+dumbbell+press+form+tutorial"},
+{"name":"Renegade row","rx":"3×8 each side · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["High plank on dumbbells — row one arm, keep hips perfectly level","The anti-rotation demand is the whole point — don't rush"],"vid":"renegade+row+form+tutorial+core"}
+]},
+{label:"Superset C — Band pull apart + Serratus wall slide",mins:12,exercises:[
+{"name":"Band pull apart","rx":"3×20 · RPE 6","sets":3,"rest":60,"cues":["Palms up, arms straight — pull band apart and squeeze shoulder blades","Wrists neutral, elbows slightly soft throughout"],"vid":"band+pull+apart+form+tutorial"},
+{"name":"Serratus wall slide","rx":"3×12 · rest 60s","sets":3,"rest":60,"cues":["Arms on wall, slide up — push the wall away to protract the shoulder blade","Critical for a consistent swing plane and shoulder health"],"vid":"serratus+wall+slide+form"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"TRX fallout","rx":"3×10","sets":3,"rest":45,"cues":["Reach arms overhead, lower your body toward floor — hips stay in line","Anti-extension demand — don't let hips sag or pike"],"vid":"TRX+fallout+core+anti+extension+form"},
+{"name":"Copenhagen plank","rx":"3×20s each side","sets":3,"rest":45,"cues":["Side plank with top foot on a bench — hip adductors and obliques","Keep the bottom knee off the ground for full difficulty"],"vid":"copenhagen+plank+form+tutorial+adductors"},
+{"name":"Bear crawl","rx":"3×20m","sets":3,"rest":30,"cues":["Hands and toes, knees hover 1 inch off floor — move contralaterally","Slow and controlled — core stability and shoulder coordination"],"vid":"bear+crawl+exercise+form+tutorial"}
+]}
+],
+B:[
+{label:"Superset A — Curtsy lunge + Step up weighted",mins:16,exercises:[
+{"name":"Curtsy lunge","rx":"3×12 each side · RPE 7","sets":3,"rest":90,"cues":["Step back and across — rear knee crosses behind front foot","Challenges the glute medius and hip stability in a new plane"],"vid":"curtsy+lunge+form+tutorial+glutes"},
+{"name":"Step up weighted high box","rx":"3×10 each side · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["Drive through the stepping heel — don't push off the trailing foot","Tall box = more hip flexion = more glute recruitment"],"vid":"weighted+step+up+high+box+form+tutorial"}
+]},
+{label:"Superset B — Cable kickback + Single leg calf raise",mins:13,exercises:[
+{"name":"Cable kickback","rx":"3×15 each side · RPE 6","sets":3,"rest":60,"cues":["Hinge slightly, drive leg back and up — squeeze at the top","Light weight, feel the glute — not a momentum exercise"],"vid":"cable+kickback+glute+form+tutorial"},
+{"name":"Standing calf raise single leg","rx":"3×15 each side · rest 60s","sets":3,"rest":60,"cues":["Full range — heel below step going down, full extension at top","One leg forces more effort — add weight once 15 reps is easy"],"vid":"single+leg+calf+raise+form+tutorial"}
+]},
+{label:"Superset C — Lateral lunge weighted + Bear crawl",mins:13,exercises:[
+{"name":"Lateral lunge weighted","rx":"3×10 each side · RPE 7","sets":3,"rest":60,"cues":["Push hips back and out — trains lateral weight transfer","Exactly the movement the downswing requires"],"vid":"lateral+lunge+form+tutorial"},
+{"name":"Bear crawl","rx":"3×20m · rest 60s","sets":3,"rest":60,"cues":["Hands and toes, knees hover 1 inch off floor — move contralaterally","Slow and controlled — core stability and shoulder coordination"],"vid":"bear+crawl+exercise+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Reverse crunch","rx":"3×15","sets":3,"rest":45,"cues":["Curl pelvis toward ribs — lower back lifts off the floor, not the hips","Control the lowering — don't let legs crash down"],"vid":"reverse+crunch+form+tutorial+lower+abs"},
+{"name":"McGill curl up","rx":"3×8 each side","sets":3,"rest":45,"cues":["One knee bent, hands under lower back — tiny crunch, neck neutral","Builds spinal stability without compressing the discs"],"vid":"mcgill+curl+up+form+tutorial+spine"},
+{"name":"Stir the pot","rx":"3×10 each direction","sets":3,"rest":45,"cues":["Forearms on stability ball, make small circles — brace the whole time","Keep hips level and breathe steadily throughout"],"vid":"stir+the+pot+plank+core+exercise+form"}
+]}
+]
+}
+},
+'4':{
+'2':{
+A:[
+{label:"Power block A — Med ball rotational slam + Plyometric push up",mins:20,exercises:[
+{"name":"Med ball rotational slam","rx":"4×5 each side · explosive","sets":4,"rest":120,"cues":["Rotate, reach overhead, slam to the floor hard — explosive every rep","Full body effort — hips, core, then arms"],"vid":"medicine+ball+rotational+slam+explosive+power"},
+{"name":"Plyometric push up","rx":"4×6 · explosive · rest 2 min","sets":4,"rest":120,"cues":["Explode off the floor — clap or just get airborne","Reset fully between reps — quality over speed"],"vid":"plyometric+push+up+explosive+form+tutorial"}
+]},
+{label:"Strength B — Speed bench + Weighted pull up",mins:18,exercises:[
+{"name":"Dumbbell bench press or chest press machine (speed reps)","rx":"4×4 at 60% 1RM · fast","sets":4,"rest":120,"cues":["60% load, maximum speed intent — compensatory acceleration","Lower with control, press explosively — speed is the stimulus"],"vid":"speed+bench+press+explosive+strength+form"},
+{"name":"Weighted pull up","rx":"3×5 · RPE 9 · rest 2 min","sets":3,"rest":120,"cues":["Full hang, chin over bar, controlled descent — add meaningful weight","Maximum effort each set — this is peak strength work"],"vid":"weighted+pull+up+form+tutorial"}
+]},
+{label:"Golf-specific finisher",mins:14,exercises:[
+{"name":"Landmine press explosive","rx":"3×8 each side","sets":3,"rest":60,"cues":["Press across body with rotation — mimics late follow-through","Power through the rotation, control the return"],"vid":"landmine+press+rotational+golf"},
+{"name":"Cable face pull","rx":"3×15 · RPE 6","sets":3,"rest":60,"cues":["Every session — keeps rotator cuff healthy","Elbows high and wide, spread at the face"],"vid":"cable+face+pull+form+tutorial+shoulder+health"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Hollow body hold","rx":"3×30s","sets":3,"rest":45,"cues":["Lower back pressed into floor, arms and legs hovering — hold the tension","Bend knees to regress if needed"],"vid":"hollow+body+hold+core+form+tutorial"},
+{"name":"Stir the pot","rx":"3×10 each direction","sets":3,"rest":45,"cues":["Forearms on stability ball, make small circles — brace the whole time","Keep hips level and breathe steadily throughout"],"vid":"stir+the+pot+plank+core+exercise+form"},
+{"name":"Tall kneeling Pallof press","rx":"3×12 each side","sets":3,"rest":45,"cues":["Kneel tall — no hip hinge allowed — press and hold 1 second","Removes the hip from the equation — pure anti-rotation"],"vid":"tall+kneeling+pallof+press+core+tutorial"}
+]}
+],
+B:[
+{label:"Explosive A — Trap bar jump deadlift heavy",mins:15,exercises:[
+{"name":"Trap bar jump deadlift heavier","rx":"4×4 · explosive · rest 3 min","sets":4,"rest":180,"cues":["Heavier than week 1 — drive up explosively, leave the ground","Closest gym movement to driving through impact in golf"],"vid":"trap+bar+jump+deadlift+power+form"}
+]},
+{label:"Explosive B — Box jump + Hip thrust speed",mins:18,exercises:[
+{"name":"Box jump","rx":"4×5 · explosive","sets":4,"rest":120,"cues":["Full hip extension at the top — don't just step up with momentum","Land softly, step down — knees stay in line with toes"],"vid":"box+jump+form+tutorial+explosive+power"},
+{"name":"Hip thrust speed reps","rx":"4×6 at 60% max · fast · rest 2 min","sets":4,"rest":120,"cues":["60% load, drive hips fast — speed of contraction is the stimulus","Full extension at top, controlled descent — repeat immediately"],"vid":"barbell+hip+thrust+form+tutorial+glutes"}
+]},
+{label:"Superset C — Single leg box jump + Lateral band step heavy",mins:16,exercises:[
+{"name":"Single leg box jump","rx":"3×4 each side · explosive","sets":3,"rest":90,"cues":["Drive through one leg explosively — land softly on the box","Builds unilateral power directly relevant to the downswing"],"vid":"single+leg+box+jump+explosive+power+form"},
+{"name":"Lateral band step heavy","rx":"3×20 each side · rest 90s","sets":3,"rest":90,"cues":["Heavy band around ankles, stay low — controlled steps","Trains hip abductors for follow-through balance"],"vid":"lateral+band+step+glute+form"}
+]},
+{label:"Accessory",mins:14,exercises:[
+{"name":"Single leg RDL heavier","rx":"3×8 each side · RPE 8","sets":3,"rest":60,"cues":["Heavier than Phase 3 — same hip hinge on one leg, more demand","Balance and hamstring — builds finish-position stability"],"vid":"single+leg+romanian+deadlift+form"},
+{"name":"Farmers carry heaviest","rx":"3×40m","sets":3,"rest":60,"cues":["Heaviest load yet — walk tall, no lean, 40 meters each set","Maximum core and grip demand"],"vid":"farmers+carry+form+tutorial+core"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"Copenhagen plank","rx":"3×20s each side","sets":3,"rest":45,"cues":["Side plank with top foot on a bench — hip adductors and obliques","Keep the bottom knee off the ground for full difficulty"],"vid":"copenhagen+plank+form+tutorial+adductors"},
+{"name":"Hollow body hold","rx":"3×30s","sets":3,"rest":45,"cues":["Lower back pressed into floor, arms and legs hovering — hold the tension","Bend knees to regress if needed"],"vid":"hollow+body+hold+core+form+tutorial"},
+{"name":"Bear crawl","rx":"3×20m","sets":3,"rest":30,"cues":["Hands and toes, knees hover 1 inch off floor — move contralaterally","Slow and controlled — core stability and shoulder coordination"],"vid":"bear+crawl+exercise+form+tutorial"}
+]}
+]
+},
+'3':{
+A:[
+{label:"Power block A — Band resisted punch + TRX push up",mins:18,exercises:[
+{"name":"Band resisted punch","rx":"4×10 each side · explosive","sets":4,"rest":90,"cues":["Band behind you, punch fast across your body — rotate through the hips","Explosive intent every rep — this trains fast-twitch rotational power"],"vid":"band+resisted+punch+rotational+power+golf"},
+{"name":"TRX or ring push up","rx":"4×10 · RPE 7 · rest 90s","sets":4,"rest":90,"cues":["Rings/TRX add instability — squeeze everything to stabilize","Control the descent more than the press"],"vid":"TRX+ring+push+up+form+tutorial"}
+]},
+{label:"Strength B — Single arm cable press + Explosive pulldown",mins:14,exercises:[
+{"name":"Single arm cable press standing","rx":"3×10 each side · RPE 7","sets":3,"rest":90,"cues":["Standing with slight stagger — press and resist trunk rotation","Trains the push pattern with core integration"],"vid":"single+arm+cable+press+standing+form"},
+{"name":"Lat pulldown explosive concentric","rx":"3×8 · RPE 7 · rest 90s","sets":3,"rest":90,"cues":["Pull fast on the way down, control the return — speed is the stimulus","Explosive concentric builds lat power for the downswing"],"vid":"lat+pulldown+explosive+form+tutorial"}
+]},
+{label:"Golf-specific finisher",mins:12,exercises:[
+{"name":"Cable woodchop fast","rx":"3×10 each side · explosive","sets":3,"rest":60,"cues":["Max speed intent — same pattern as the downswing, same hip-first sequence","Decelerate under control at the end of each rep"],"vid":"cable+wood+chop+rotational+power+golf+form"},
+{"name":"Serratus wall slide","rx":"3×12","sets":3,"rest":60,"cues":["Arms on wall, slide up — push the wall away to protract the shoulder blade","Critical for a consistent swing plane and shoulder health"],"vid":"serratus+wall+slide+form"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"TRX fallout","rx":"3×10","sets":3,"rest":45,"cues":["Reach arms overhead, lower your body toward floor — hips stay in line","Anti-extension demand — don't let hips sag or pike"],"vid":"TRX+fallout+core+anti+extension+form"},
+{"name":"Side plank with rotation","rx":"3×8 each side","sets":3,"rest":45,"cues":["Side plank, rotate top arm under and back — trains oblique in the golf position","Control the rotation — don't rush, feel the oblique work"],"vid":"rotational+side+plank+core+form"},
+{"name":"McGill curl up","rx":"3×8 each side","sets":3,"rest":45,"cues":["One knee bent, hands under lower back — tiny crunch, neck neutral","Builds spinal stability without compressing the discs"],"vid":"mcgill+curl+up+form+tutorial+spine"}
+]}
+],
+B:[
+{label:"Explosive A — Broad jump",mins:15,exercises:[
+{"name":"Broad jump","rx":"4×4 · explosive · rest 3 min","sets":4,"rest":180,"cues":["Full hip extension at takeoff — drive arms back then forward to generate momentum","Land softly with bent knees — absorb the landing through the hips"],"vid":"broad+jump+explosive+power+form+tutorial"}
+]},
+{label:"Explosive B — Trap bar DL fast + Lateral lunge jump",mins:18,exercises:[
+{"name":"Trap bar deadlift moderate fast","rx":"4×5 · explosive","sets":4,"rest":120,"cues":["Moderate load, maximum speed — drive the floor away as fast as possible","Speed intent even if the bar moves slower — compensatory acceleration"],"vid":"trap+bar+deadlift+form+tutorial+lower+back+safe"},
+{"name":"Lateral lunge with jump","rx":"3×8 each side · explosive · rest 2 min","sets":3,"rest":120,"cues":["Lunge laterally then drive off that foot explosively — trains lateral power","Land softly, absorb through the hip — reset and repeat"],"vid":"lateral+lunge+jump+explosive+power+form"}
+]},
+{label:"Superset C — Hip thrust pause + Cable pull through fast",mins:16,exercises:[
+{"name":"Hip thrust pause at top","rx":"4×8 · RPE 8","sets":4,"rest":90,"cues":["Drive to full extension, pause 2 sec — maximum time under tension at peak","Squeeze glutes as hard as possible at the pause"],"vid":"barbell+hip+thrust+form+tutorial+glutes"},
+{"name":"Cable pull through fast","rx":"3×15 · explosive · rest 90s","sets":3,"rest":90,"cues":["Hip hinge fast — drive hips through explosively, squeeze glutes at top","Speed is the stimulus — same pattern as before but with intent"],"vid":"cable+pull+through+form+tutorial"}
+]},
+{label:"Core finisher",mins:12,exercises:[
+{"name":"TRX fallout","rx":"3×10","sets":3,"rest":45,"cues":["Reach arms overhead, lower your body toward floor — hips stay in line","Anti-extension demand — don't let hips sag or pike"],"vid":"TRX+fallout+core+anti+extension+form"},
+{"name":"McGill curl up","rx":"3×8 each side","sets":3,"rest":45,"cues":["One knee bent, hands under lower back — tiny crunch, neck neutral","Builds spinal stability without compressing the discs"],"vid":"mcgill+curl+up+form+tutorial+spine"},
+{"name":"Stir the pot","rx":"3×10 each direction","sets":3,"rest":45,"cues":["Forearms on stability ball, make small circles — brace the whole time","Keep hips level and breathe steadily throughout"],"vid":"stir+the+pot+plank+core+exercise+form"}
+]}
+]
+}
+}
+};
+
+// Returns full ordered sections for a given phase/week/day
+function getSections(phase, week, day){
+  const allW1 = PHASES_W1[phase][day].sections;
+  if(week==='1') return allW1;
+  const isShared = s=>{const l=s.label.toLowerCase();return l.includes('warm')||l.includes('mobil')||l.includes('conditioning')||l.includes('cool');};
+  const warmup = allW1.filter(s=>s.label.toLowerCase().includes('warm'));
+  const mobility = allW1.filter(s=>s.label.toLowerCase().includes('mobil'));
+  const conditioning = allW1.filter(s=>s.label.toLowerCase().includes('conditioning'));
+  const cooldown = allW1.filter(s=>s.label.toLowerCase().includes('cool'));
+  const weekData = ((PHASES_MAIN[phase]||{})[week]||{})[day];
+  const mainSecs = weekData || allW1.filter(s=>!isShared(s));
+  return [...warmup, ...mainSecs, ...mobility, ...conditioning, ...cooldown];
+}
+
+let currentPhase='1', currentWeek='1';
+const DAYS_DATA = PHASES_W1[currentPhase];
 
 const LIFTS_LIST = ['Goblet squat','Romanian deadlift','Leg press','Trap bar deadlift','Hip thrust','Incline DB press','Lat pulldown'];
 
@@ -801,25 +1209,106 @@ function refreshHome(){
   document.getElementById('snap-label').textContent=Math.round(t.cal)+' / '+target.toLocaleString()+' cal';
 }
 
-function flatEx(day){const arr=[];PHASES[currentPhase][day].sections.forEach(sec=>sec.exercises.forEach(ex=>arr.push({...ex,secLabel:sec.label})));return arr;}
+// Set logging persistence helpers
+function getSetKey(phase,week,day,exName,setNum,field){
+  return 'sets_p'+phase+'_'+day+'_w'+week+'_'+exName.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')+'_s'+setNum+'_'+field;
+}
+function saveSetVal(phase,week,day,exName,setNum,field,val){
+  const k=getSetKey(phase,week,day,exName,setNum,field);
+  localStorage.setItem(k,val);localStorage.setItem(k+'_ts',Date.now());
+}
+function loadSetVal(phase,week,day,exName,setNum,field){
+  const k=getSetKey(phase,week,day,exName,setNum,field);
+  const ts=localStorage.getItem(k+'_ts');
+  if(ts&&Date.now()-parseInt(ts)>7*24*60*60*1000){localStorage.removeItem(k);localStorage.removeItem(k+'_ts');return '';}
+  return localStorage.getItem(k)||'';
+}
+
+// Exercise type classifier
+function getExType(ex,secLabel){
+  const n=ex.name.toLowerCase(),rx=(ex.rx||'').toLowerCase(),sl=(secLabel||'').toLowerCase();
+  if(ex.sets===0||sl.includes('warm')||sl.includes('cool')||sl.includes('mobil')) return 'simple';
+  if(sl.includes('conditioning')) return 'cardio';
+  const timedNames=['plank','hollow body hold','wall sit','stir the pot','trx fallout','copenhagen plank','dead bug','bird dog','mcgill curl','rdl plank'];
+  if(timedNames.some(t=>n.includes(t))&&(rx.includes('s ')||rx.includes('s·')||rx.includes('0s')||rx.includes('sec')||rx.match(/\d+s$/))) return 'timed';
+  const carries=['suitcase carry','farmers carry','bear crawl'];
+  if(carries.some(t=>n.includes(t))) return 'carry';
+  const cardio=['rower intervals','assault bike','treadmill walk','box jump','broad jump','plyometric push up','band resisted punch','jump deadlift'];
+  if(cardio.some(t=>n.includes(t))) return 'cardio';
+  return 'weighted';
+}
+
+function parseDuration(rx){
+  let m;
+  if(m=rx.match(/(\d+)\s*min/)) return parseInt(m[1])*60;
+  if(m=rx.match(/(\d+)\s*s(?:ec)?/)) return parseInt(m[1]);
+  return 30;
+}
+
+function fmtRest(s){
+  if(s<60) return s+'s';
+  const m=Math.floor(s/60),sec=s%60;
+  if(sec===0) return m+' min';
+  return m+'m '+sec+'s';
+}
+
+function flatEx(day){
+  const arr=[];
+  getSections(currentPhase,currentWeek,day).forEach(sec=>sec.exercises.forEach(ex=>arr.push({...ex,secLabel:sec.label})));
+  return arr;
+}
 
 function selectPhase(p,btn){
-  currentPhase=p;
-  for(let i=1;i<=4;i++)document.getElementById('phase-'+i+'-btn').className='toggle-btn'+(String(i)===p?' active':'');
+  currentPhase=p; currentWeek='1';
+  for(let i=1;i<=4;i++) document.getElementById('phase-'+i+'-btn').className='toggle-btn'+(String(i)===p?' active':'');
+  for(let i=1;i<=3;i++) document.getElementById('week-'+i+'-btn').className='toggle-btn'+(i===1?' active':'');
   document.getElementById('workout-sub').textContent=PHASE_INFO[p].name+' · '+PHASE_INFO[p].focus;
   if(sessionActive){clearInterval(sessionInterval);sessionActive=false;document.getElementById('session-bar').style.display='none';document.getElementById('start-sess-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start session';document.getElementById('start-sess-btn').className='btn btn-green';}
   renderWorkout();
 }
 
+function selectWeek(w,btn){
+  currentWeek=w;
+  for(let i=1;i<=3;i++) document.getElementById('week-'+i+'-btn').className='toggle-btn'+(String(i)===w?' active':'');
+  if(sessionActive){clearInterval(sessionInterval);sessionActive=false;document.getElementById('session-bar').style.display='none';document.getElementById('start-sess-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start session';document.getElementById('start-sess-btn').className='btn btn-green';}
+  renderWorkout();
+}
+
+const timedSetIntervals={};
+function startTimedSet(idx,setNum,dur){
+  const key=idx+'_'+setNum;
+  if(timedSetIntervals[key]) return;
+  let remaining=dur;
+  const el=document.getElementById('tcount-'+idx+'-'+setNum);
+  const btn=document.getElementById('tbtn-'+idx+'-'+setNum);
+  if(btn){btn.disabled=true;btn.textContent='Running…';}
+  function tick(){
+    if(!el){clearInterval(timedSetIntervals[key]);delete timedSetIntervals[key];return;}
+    const m=Math.floor(remaining/60),s=remaining%60;
+    el.textContent=m>0?m+':'+String(s).padStart(2,'0'):remaining+'s';
+    if(remaining<=0){
+      clearInterval(timedSetIntervals[key]);delete timedSetIntervals[key];
+      el.textContent='Done!';el.style.color='var(--green)';
+      if(btn){btn.disabled=false;btn.textContent='Done ✓';}
+      try{if(navigator.vibrate)navigator.vibrate([200,100,200]);}catch(e){}
+      try{beepTimer();}catch(e){}
+    }
+    remaining--;
+  }
+  tick();
+  timedSetIntervals[key]=setInterval(tick,1000);
+}
+
 function renderWorkout(){
   allEx=flatEx(currentDay);
   let html='';
-  PHASES[currentPhase][currentDay].sections.forEach(sec=>{
+  getSections(currentPhase,currentWeek,currentDay).forEach(sec=>{
     html+=`<div class="section-label" style="display:flex;justify-content:space-between;align-items:center">${sec.label}<span class="pill pill-blue">${sec.mins} min</span></div>`;
     sec.exercises.forEach(ex=>{
       const gIdx=allEx.findIndex(e=>e.name===ex.name&&e.secLabel===sec.label);
       const isDone=sessionActive&&gIdx<currentExIdx;
       const isActive=sessionActive&&gIdx===currentExIdx;
+      const exType=getExType(ex,sec.label);
       html+=`<div class="ex-block${isActive?' active-ex':isDone?' done-ex':''}" id="exb-${gIdx}">
         <div class="ex-header" onclick="toggleExBody(${gIdx})">
           <div class="ex-dot">${isDone?'<i class="ti ti-check" style="font-size:11px" aria-hidden="true"></i>':isActive?'<i class="ti ti-player-play" style="font-size:10px" aria-hidden="true"></i>':gIdx+1}</div>
@@ -830,8 +1319,8 @@ function renderWorkout(){
           <div class="ex-cue" style="margin-top:6px">${ex.cues[0]}</div>
           <div class="ex-cue">${ex.cues[1]}</div>
           <a class="video-link" href="https://www.youtube.com/results?search_query=${ex.vid}" target="_blank"><i class="ti ti-player-play" aria-hidden="true" style="font-size:12px"></i> Watch tutorial</a>
-          ${ex.sets>0?renderSetLog(gIdx,ex.sets):''}
-          ${isActive&&ex.rest>0?`<button class="btn btn-amber" style="margin-top:8px" onclick="launchRest(${ex.rest})"><i class="ti ti-clock" aria-hidden="true"></i> Start ${ex.rest>=60?Math.floor(ex.rest/60)+'m':ex.rest+'s'} rest</button>`:''}
+          ${renderExBody(gIdx,ex,sec.label,exType)}
+          ${isActive&&ex.rest>0&&exType==='weighted'?`<button class="btn btn-amber" style="margin-top:8px" onclick="launchRest(${ex.rest})"><i class="ti ti-clock" aria-hidden="true"></i> Rest ${fmtRest(ex.rest)}</button>`:''}
           ${isActive?`<button class="btn btn-green" style="margin-top:6px" onclick="advanceEx()"><i class="ti ti-arrow-right" aria-hidden="true"></i> Done — next exercise</button>`:''}
         </div>
       </div>`;
@@ -845,9 +1334,50 @@ function renderWorkout(){
   }
 }
 
-function renderSetLog(idx,sets){
-  let h=`<div style="margin-top:10px"><div class="section-label">Log sets</div><div class="set-grid"><span class="set-lbl">Set</span><span class="set-lbl">Weight</span><span class="set-lbl">Reps</span><span class="set-lbl">RPE</span><span></span></div>`;
-  for(let i=1;i<=sets;i++)h+=`<div class="set-grid"><span class="set-lbl">${i}</span><input class="set-inp" type="number" placeholder="—"><input class="set-inp" type="number" placeholder="—"><input class="set-inp" type="number" placeholder="—"><button class="tick" onclick="this.classList.toggle('on')" aria-label="Done"><i class="ti ti-check" aria-hidden="true" style="font-size:12px"></i></button></div>`;
+function renderExBody(idx,ex,secLabel,exType){
+  const exName=ex.name;
+  if(exType==='simple'){
+    return `<div class="ex-checkoff"><button class="ex-checkoff-btn" onclick="this.classList.toggle('on')"><i class="ti ti-check" aria-hidden="true"></i> Mark done</button></div>`;
+  }
+  if(exType==='cardio'){
+    let rounds=1;const m=ex.rx.match(/(\d+)\s*rounds?/i);if(m)rounds=parseInt(m[1]);
+    let h='<div class="ex-checkoff" style="flex-wrap:wrap;gap:6px;margin-top:8px">';
+    if(rounds>1){for(let i=1;i<=rounds;i++)h+=`<button class="ex-checkoff-btn" onclick="this.classList.toggle('on')">R${i}</button>`;}
+    else h+=`<button class="ex-checkoff-btn" onclick="this.classList.toggle('on')"><i class="ti ti-check" aria-hidden="true"></i> Done</button>`;
+    return h+'</div>';
+  }
+  if(exType==='carry'){
+    let h='<div style="margin-top:8px">';
+    for(let i=1;i<=Math.max(1,ex.sets);i++) h+=`<div class="timed-set-row"><span style="font-size:12px;color:var(--text-2);min-width:36px">Set ${i}</span><span style="flex:1;font-size:12px;color:var(--text-2)">${ex.rx.match(/\d+m/)?ex.rx.match(/\d+m/)[0]:''}</span><button class="ex-checkoff-btn" onclick="this.classList.toggle('on')"><i class="ti ti-check" aria-hidden="true"></i></button></div>`;
+    return h+'</div>';
+  }
+  if(exType==='timed'){
+    const dur=parseDuration(ex.rx);
+    let h='<div style="margin-top:8px">';
+    for(let i=1;i<=Math.max(1,ex.sets);i++){
+      h+=`<div class="timed-set-row">
+        <span style="font-size:12px;color:var(--text-2);min-width:36px">Set ${i}</span>
+        <span class="timed-countdown" id="tcount-${idx}-${i}">${dur>=60?Math.floor(dur/60)+':'+String(dur%60).padStart(2,'0'):dur+'s'}</span>
+        <button class="btn btn-blue" id="tbtn-${idx}-${i}" style="width:auto;padding:6px 12px;margin:0;font-size:12px" onclick="startTimedSet(${idx},${i},${dur})"><i class="ti ti-player-play" aria-hidden="true"></i> Start</button>
+        <button class="ex-checkoff-btn" onclick="this.classList.toggle('on')"><i class="ti ti-check" aria-hidden="true"></i></button>
+      </div>`;
+    }
+    return h+'</div>';
+  }
+  // weighted — with persistence
+  const es=exName.replace(/'/g,"\\'");
+  let h=`<div style="margin-top:10px"><div class="section-label">Log sets</div><div class="set-grid"><span class="set-lbl">Set</span><span class="set-lbl">Weight</span><span class="set-lbl">Reps</span><span class="set-lbl">RPE <span class="rpe-info" onclick="openRpePopup(event)">i</span></span><span></span></div>`;
+  for(let i=1;i<=ex.sets;i++){
+    const w=loadSetVal(currentPhase,currentWeek,currentDay,exName,i,'w');
+    const r=loadSetVal(currentPhase,currentWeek,currentDay,exName,i,'r');
+    const rpe=loadSetVal(currentPhase,currentWeek,currentDay,exName,i,'rpe');
+    h+=`<div class="set-grid"><span class="set-lbl">${i}</span>
+      <input class="set-inp" type="number" placeholder="—" value="${w}" oninput="saveSetVal('${currentPhase}','${currentWeek}','${currentDay}','${es}',${i},'w',this.value)">
+      <input class="set-inp" type="number" placeholder="—" value="${r}" oninput="saveSetVal('${currentPhase}','${currentWeek}','${currentDay}','${es}',${i},'r',this.value)">
+      <input class="set-inp" type="number" placeholder="—" value="${rpe}" oninput="saveSetVal('${currentPhase}','${currentWeek}','${currentDay}','${es}',${i},'rpe',this.value)">
+      <button class="tick" onclick="this.classList.toggle('on')" aria-label="Done"><i class="ti ti-check" aria-hidden="true" style="font-size:12px"></i></button>
+    </div>`;
+  }
   return h+'</div>';
 }
 
@@ -892,7 +1422,7 @@ function tickSession(){
 
 function advanceEx(){if(currentExIdx<allEx.length-1){currentExIdx++;renderWorkout();}else{toggleSession();}}
 
-function launchRest(secs){clearInterval(timerInterval);timerRunning=false;timerSecs=secs;timerMax=secs;timerEndTime=null;updateTimerDisp();document.getElementById('timer-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start';document.getElementById('timer-btn').className='btn btn-green';goScreen('timer');setTimeout(()=>toggleTimer(),300);}
+function launchRest(secs){startFloatTimer(secs);}
 
 function refreshProgress(){
   const u=progUser,s=state[u];
@@ -1152,9 +1682,20 @@ function tickTimer(){
   if(timerSecs<=0){
     clearInterval(timerInterval);timerRunning=false;
     btn.innerHTML='<i class="ti ti-refresh" aria-hidden="true"></i> Done';btn.className='btn btn-green';
-    try{if(navigator.vibrate)navigator.vibrate([200,100,200]);}catch(e){}
+    const disp=document.getElementById('timer-disp');
+    disp.style.animation='timerFlash 0.5s ease-in-out infinite';
+    const banner=document.getElementById('rest-complete-banner');
+    if(banner){banner.style.display='block';setTimeout(()=>dismissRestBanner(),3000);}
+    try{if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);}catch(e){}
     try{beepTimer();}catch(e){}
   }
+}
+
+function dismissRestBanner(){
+  const b=document.getElementById('rest-complete-banner');
+  if(b)b.style.display='none';
+  const d=document.getElementById('timer-disp');
+  if(d)d.style.animation='';
 }
 
 let audioCtx=null;
@@ -1191,6 +1732,60 @@ function updateTimerDisp(){
   fill.style.width=pct+'%';
   fill.style.background=timerSecs<=10?'var(--red)':timerSecs<=30?'var(--amber)':'var(--amber-light)';
 }
+
+// RPE Popup
+function openRpePopup(e){e.stopPropagation();document.getElementById('rpe-popup').style.display='block';document.getElementById('rpe-popup-overlay').style.display='block';}
+function closeRpePopup(){document.getElementById('rpe-popup').style.display='none';document.getElementById('rpe-popup-overlay').style.display='none';}
+
+// Floating timer
+let floatSecs=0,floatMax=90,floatRunning=false,floatEndTime=null,floatInterval=null;
+
+function floatTimerTap(){
+  const presets=document.getElementById('float-presets');
+  if(floatRunning){
+    floatRunning=false;clearInterval(floatInterval);
+    const btn=document.getElementById('float-timer-btn');
+    btn.className='';document.getElementById('float-timer-label').textContent='Rest';
+    floatSecs=0;presets.style.display='none';return;
+  }
+  if(floatSecs>0){startFloatTimer(floatSecs);return;}
+  presets.style.display=presets.style.display==='block'?'none':'block';
+}
+
+function startFloatTimer(s){
+  document.getElementById('float-presets').style.display='none';
+  floatSecs=s;floatMax=s;floatRunning=true;
+  floatEndTime=Date.now()+s*1000;
+  clearInterval(floatInterval);
+  floatInterval=setInterval(tickFloatTimer,250);
+  tickFloatTimer();
+}
+
+function tickFloatTimer(){
+  floatSecs=Math.max(0,Math.round((floatEndTime-Date.now())/1000));
+  const btn=document.getElementById('float-timer-btn');
+  const lbl=document.getElementById('float-timer-label');
+  if(floatSecs<=0){
+    clearInterval(floatInterval);floatRunning=false;
+    btn.className='done';lbl.textContent='Done!';
+    try{if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);}catch(e){}
+    try{beepTimer();}catch(e){}
+    setTimeout(()=>{if(btn)btn.className='';if(lbl)lbl.textContent='Rest';floatSecs=0;},3000);
+    return;
+  }
+  btn.className='running';
+  const m=Math.floor(floatSecs/60),sec=floatSecs%60;
+  lbl.textContent=m>0?m+':'+String(sec).padStart(2,'0'):floatSecs+'s';
+}
+
+// Close float presets when tapping elsewhere
+document.addEventListener('click',function(e){
+  const ft=document.getElementById('float-timer');
+  if(ft&&!ft.contains(e.target)){
+    const p=document.getElementById('float-presets');
+    if(p)p.style.display='none';
+  }
+});
 
 refreshHome();renderWorkout();
 </script>
