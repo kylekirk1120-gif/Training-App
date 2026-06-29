@@ -1674,13 +1674,20 @@ function supersetDone(firstIdx,count,restSecs){
 }
 
 function endSession(){
+  console.log('[endSession] phase='+currentPhase+' week='+currentWeek+' day='+currentDay+' user='+homeUser);
   const elapsed=Date.now()-sessionStart;
-  saveSessionHistory();
+  try{saveSessionHistory();}catch(e){console.error('[endSession] saveSessionHistory failed:',e);}
   sessionActive=false;clearInterval(sessionInterval);
   const u=homeUser;
-  state[u].sessions++;state[u].streak++;
-  state[u].lastPhase=currentPhase;state[u].lastWeek=currentWeek;state[u].lastDay=currentDay;
+  state[u].sessions++;
+  state[u].streak++;
+  state[u].lastPhase=currentPhase;
+  state[u].lastWeek=currentWeek;
+  state[u].lastDay=currentDay;
+  state[u].lastDate=new Date().toLocaleDateString();
+  console.log('[endSession] state updated:',JSON.stringify({sessions:state[u].sessions,streak:state[u].streak,lastPhase:state[u].lastPhase,lastWeek:state[u].lastWeek,lastDay:state[u].lastDay,lastDate:state[u].lastDate}));
   saveState();
+  console.log('[endSession] localStorage saved, rendering and showing modal');
   document.getElementById('session-bar').style.display='none';
   document.getElementById('start-sess-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start session';
   document.getElementById('start-sess-btn').className='btn btn-green';
@@ -1972,8 +1979,21 @@ function refreshCompare(){
 }
 
 function addSessionFor(u){
-  state[u].sessions++;state[u].streak++;saveState();refreshCompare();
-  if(u===homeUser)refreshHome();
+  console.log('[addSessionFor] user='+u);
+  const s=state[u];
+  const completed=s.lastPhase?getNextSession(s.lastPhase,s.lastWeek,s.lastDay):{phase:'1',week:'1',day:'A'};
+  console.log('[addSessionFor] marking completed:',JSON.stringify(completed));
+  s.sessions++;
+  s.streak++;
+  s.lastPhase=completed.phase;
+  s.lastWeek=completed.week;
+  s.lastDay=completed.day;
+  s.lastDate=new Date().toLocaleDateString();
+  console.log('[addSessionFor] state updated:',JSON.stringify({sessions:s.sessions,streak:s.streak,lastPhase:s.lastPhase,lastWeek:s.lastWeek,lastDay:s.lastDay}));
+  saveState();
+  console.log('[addSessionFor] localStorage saved');
+  refreshCompare();
+  refreshHome();
 }
 
 function toggleTimer(){
