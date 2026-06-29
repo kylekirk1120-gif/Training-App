@@ -267,6 +267,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
     <div class="metric"><div class="metric-label">Current</div><div class="metric-val" id="prog-curr-wt" style="font-size:16px">—</div><div class="metric-sub">lbs</div></div>
   </div>
 
+  <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+    <button id="prog-edit-btn" onclick="openProgEdit()" style="display:flex;align-items:center;gap:3px;border:0.5px solid var(--border);background:var(--card-bg);color:var(--text-3);font-size:12px;font-weight:500;padding:5px 10px;border-radius:var(--radius-sm);cursor:pointer;-webkit-appearance:none;appearance:none"><i class="ti ti-pencil" aria-hidden="true" style="font-size:12px"></i> Edit</button>
+  </div>
+
+  <div id="prog-edit-panel" style="display:none;background:var(--card-bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)">
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Correct data — <span id="prog-edit-user-label">You</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div><div style="font-size:11px;color:var(--text-2);margin-bottom:4px">Sessions</div><input type="number" class="input" id="edit-sessions" style="margin-bottom:0" min="0" max="48"></div>
+      <div><div style="font-size:11px;color:var(--text-2);margin-bottom:4px">Streak</div><input type="number" class="input" id="edit-streak" style="margin-bottom:0" min="0"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><div style="font-size:11px;color:var(--text-2);margin-bottom:4px">Phase</div><select class="input" id="edit-phase" style="margin-bottom:0;-webkit-appearance:auto;appearance:auto"><option value="1">Phase 1</option><option value="2">Phase 2</option><option value="3">Phase 3</option><option value="4">Phase 4</option></select></div>
+      <div><div style="font-size:11px;color:var(--text-2);margin-bottom:4px">Week</div><select class="input" id="edit-week" style="margin-bottom:0;-webkit-appearance:auto;appearance:auto"><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option></select></div>
+      <div><div style="font-size:11px;color:var(--text-2);margin-bottom:4px">Day</div><select class="input" id="edit-day" style="margin-bottom:0;-webkit-appearance:auto;appearance:auto"><option value="A">Day A</option><option value="B">Day B</option></select></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="saveProgEdit()"><i class="ti ti-check" aria-hidden="true"></i> Save</button>
+      <button class="btn" onclick="cancelProgEdit()">Cancel</button>
+    </div>
+    <div id="prog-edit-confirm" style="display:none;text-align:center;font-size:13px;color:var(--green-dark);font-weight:600;margin-top:8px">Updated!</div>
+  </div>
+
   <div class="card">
     <div class="card-title">48-session consistency</div>
     <div style="display:flex;gap:3px;flex-wrap:wrap" id="streak-dots"></div>
@@ -1369,7 +1391,16 @@ function goScreen(id){
 }
 
 function setHomeUser(u,btn){homeUser=u;document.getElementById('h-you-btn').className='toggle-btn'+(u==='you'?' you-on':'');document.getElementById('h-dad-btn').className='toggle-btn'+(u==='dad'?' dad-on':'');refreshHome();}
-function setProgUser(u,btn){progUser=u;document.getElementById('prog-you-btn').className='toggle-btn'+(u==='you'?' you-on':'');document.getElementById('prog-dad-btn').className='toggle-btn'+(u==='dad'?' dad-on':'');refreshProgress();}
+function setProgUser(u,btn){
+  progUser=u;
+  const ep=document.getElementById('prog-edit-panel');
+  const eb=document.getElementById('prog-edit-btn');
+  if(ep)ep.style.display='none';
+  if(eb)eb.style.display='';
+  document.getElementById('prog-you-btn').className='toggle-btn'+(u==='you'?' you-on':'');
+  document.getElementById('prog-dad-btn').className='toggle-btn'+(u==='dad'?' dad-on':'');
+  refreshProgress();
+}
 function setNutUser(u,btn){nutUser=u;document.getElementById('nut-you-btn').className='toggle-btn'+(u==='you'?' you-on':'');document.getElementById('nut-dad-btn').className='toggle-btn'+(u==='dad'?' dad-on':'');refreshNutrition();}
 function setNutDay(d,btn){nutDay=d;document.getElementById('nut-train-btn').className='toggle-btn'+(d==='train'?' active':'');document.getElementById('nut-rest-btn').className='toggle-btn'+(d==='rest'?' active':'');refreshNutrition();}
 
@@ -1731,6 +1762,40 @@ function refreshProgress(){
   renderBWEntries();
   renderLiftBests();
   renderLiftHistory();
+}
+
+function openProgEdit(){
+  const u=progUser,s=state[u];
+  document.getElementById('edit-sessions').value=s.sessions||0;
+  document.getElementById('edit-streak').value=s.streak||0;
+  document.getElementById('edit-phase').value=s.lastPhase||'1';
+  document.getElementById('edit-week').value=s.lastWeek||'1';
+  document.getElementById('edit-day').value=s.lastDay||'A';
+  document.getElementById('prog-edit-user-label').textContent=u==='you'?'You':'Dad';
+  document.getElementById('prog-edit-panel').style.display='block';
+  document.getElementById('prog-edit-btn').style.display='none';
+}
+function saveProgEdit(){
+  const u=progUser,s=state[u];
+  s.sessions=Math.max(0,parseInt(document.getElementById('edit-sessions').value)||0);
+  s.streak=Math.max(0,parseInt(document.getElementById('edit-streak').value)||0);
+  s.lastPhase=document.getElementById('edit-phase').value;
+  s.lastWeek=document.getElementById('edit-week').value;
+  s.lastDay=document.getElementById('edit-day').value;
+  saveState();
+  const conf=document.getElementById('prog-edit-confirm');
+  conf.style.display='block';
+  setTimeout(()=>{
+    conf.style.display='none';
+    document.getElementById('prog-edit-panel').style.display='none';
+    document.getElementById('prog-edit-btn').style.display='';
+    refreshProgress();
+    refreshHome();
+  },1200);
+}
+function cancelProgEdit(){
+  document.getElementById('prog-edit-panel').style.display='none';
+  document.getElementById('prog-edit-btn').style.display='';
 }
 
 function renderLiftHistory(){
