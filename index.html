@@ -134,6 +134,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
 .timed-set-row{display:flex;align-items:center;gap:8px;margin-top:6px;padding:6px 0;border-bottom:0.5px solid var(--border)}
 .timed-set-row:last-child{border-bottom:none}
 .timed-countdown{font-size:22px;font-weight:700;color:var(--blue-dark);font-variant-numeric:tabular-nums;min-width:48px;text-align:center}
+#sess-btn-sticky{position:sticky;top:0;z-index:50;background:var(--gray-bg);padding:6px 0 2px;margin-bottom:4px}
+#completion-modal{display:none;position:fixed;inset:0;background:var(--card-bg);z-index:600;overflow-y:auto;padding:40px 20px 100px;max-width:480px;margin:0 auto;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#completion-modal.show{display:flex}
+.checkmark-circle{width:80px;height:80px;border-radius:50%;background:var(--green-light);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;animation:popIn 0.4s ease-out}
+@keyframes popIn{0%{transform:scale(0);opacity:0}80%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.superset-done-btn{margin:4px 0 8px!important;background:var(--green-light)!important;border-color:#97C459!important;color:var(--green-dark)!important}
 </style>
 </head>
 <body>
@@ -231,6 +237,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
     <button class="toggle-btn" id="day-b-btn" onclick="selectDay('B',this)">Day B — Lower</button>
   </div>
 
+  <div id="sess-btn-sticky">
+    <button class="btn btn-green" id="start-sess-btn" onclick="toggleSession()"><i class="ti ti-player-play" aria-hidden="true"></i> Start session</button>
+  </div>
+
   <div id="session-bar" style="display:none" class="session-bar">
     <div><div style="font-size:11px;color:var(--blue-dark);font-weight:600">Session time</div><div class="session-clock" id="sess-clock">0:00</div></div>
     <div style="text-align:center"><div style="font-size:11px;color:var(--blue-dark)">Exercise</div><div style="font-size:18px;font-weight:700;color:var(--blue-dark)" id="sess-ex-num">—</div></div>
@@ -238,11 +248,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
   </div>
 
   <div id="workout-content"></div>
-
-  <div class="btn-row" style="margin-top:4px">
-    <button class="btn btn-green" id="start-sess-btn" onclick="toggleSession()"><i class="ti ti-player-play" aria-hidden="true"></i> Start session</button>
-    <button class="btn" onclick="goScreen('timer')"><i class="ti ti-clock" aria-hidden="true"></i> Rest timer</button>
-  </div>
 </div>
 
 <!-- PROGRESS -->
@@ -279,6 +284,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
   <div class="card">
     <div class="card-title">Key lift bests</div>
     <div id="lift-bests"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Lift history</div>
+    <div id="lift-history"><div style="font-size:13px;color:var(--text-2);text-align:center;padding:10px 0">Log sessions to see lift history here</div></div>
   </div>
 </div>
 
@@ -414,6 +424,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
     <div class="ing-row"><span style="color:var(--text-2)">Explosive / power sets</span><span>3 min</span></div>
     <div style="background:var(--gray-bg);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text-2);margin-top:10px;line-height:1.6">If RPE jumps more than 1 point between sets, add 30 more seconds of rest. The timer now keeps running accurately even if your screen locks — it beeps and vibrates when done.</div>
   </div>
+  <div class="tip-box" style="margin-top:4px">
+    <strong style="color:var(--text)">iPhone tip:</strong> Set Auto-Lock to Never while at the gym (Settings → Display &amp; Brightness → Auto-Lock) so the timer stays visible between sets.
+  </div>
 </div>
 
 <!-- INSTALL -->
@@ -458,6 +471,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;backg
     <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">Sharing with Dad</div>
     <div style="font-size:12px;color:var(--text-2);line-height:1.65">Once your URL is live, just text it to your dad. He opens it in Safari on his iPhone and follows the same "Add to Home Screen" steps. You'll both have the same app — use the You / Dad toggle inside to switch between profiles. Note: data saves locally on each phone separately, so use the comparison screen when you're together to compare progress.</div>
   </div>
+</div>
+
+<!-- SESSION COMPLETION MODAL -->
+<div id="completion-modal">
+  <div class="checkmark-circle"><i class="ti ti-trophy" aria-hidden="true" style="color:var(--green);font-size:36px"></i></div>
+  <div style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:8px" id="modal-title">Session complete!</div>
+  <div style="font-size:15px;color:var(--text-2);margin-bottom:20px" id="modal-motive">Great work!</div>
+  <div style="background:var(--gray-bg);border-radius:var(--radius);padding:16px;width:100%;margin-bottom:16px">
+    <div class="section-label" style="text-align:left;margin-bottom:8px">Session summary</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="modal-summary"></div>
+  </div>
+  <div style="background:var(--blue-light);border-radius:var(--radius);padding:16px;width:100%;margin-bottom:24px;border:0.5px solid #85B7EB">
+    <div style="font-size:11px;font-weight:600;color:var(--blue-dark);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Up next</div>
+    <div style="font-size:16px;font-weight:600;color:var(--text)" id="modal-next"></div>
+  </div>
+  <button class="btn btn-green" style="max-width:200px" onclick="dismissCompletionModal()"><i class="ti ti-thumb-up" aria-hidden="true"></i> Got it!</button>
 </div>
 
 <!-- REST COMPLETE BANNER -->
@@ -1119,15 +1148,166 @@ B:[
 }
 };
 
+const MOBILITY = {
+'1':{
+  A:{
+    '1':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Thread the needle","rx":"2×8 each side","sets":0,"rest":0,"cues":["Start on all fours — thread one arm under your body and follow your gaze, rotating from mid-back","Exhale as you thread through — hold at end range for a full breath"],"vid":"thread+the+needle+thoracic+rotation+mobility"},
+      {"name":"Thoracic rotation open book","rx":"2×8 each side","sets":0,"rest":0,"cues":["Lie on side with hips stacked — rotate top arm and shoulder toward the floor","Rotation comes from mid-back, not neck — follow your hand with your eyes"],"vid":"thoracic+rotation+open+book+mobility"},
+      {"name":"Pec minor stretch on foam roller","rx":"2×30s","sets":0,"rest":0,"cues":["Lie on roller along the spine, arms at 90° and let them fall to the sides — breathe deeply","The pec minor pulls the shoulder forward — releasing it restores upright posture"],"vid":"pec+minor+stretch+foam+roller+mobility"}
+    ]},
+    '2':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Wall slides","rx":"2×10","sets":0,"rest":0,"cues":["Back of hands and forearms stay in contact with the wall throughout","Slide slowly up — feel the shoulder blades elevate and rotate fully"],"vid":"wall+slides+shoulder+mobility"},
+      {"name":"Overhead tricep and lat stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Reach one arm overhead, lean away from that side — feel the lat and tricep lengthen","Keep the opposite side grounded — don't let the hip flare out"],"vid":"overhead+lat+tricep+stretch+mobility"},
+      {"name":"Thoracic extension over foam roller","rx":"2×5 positions","sets":0,"rest":0,"cues":["Place roller across mid-back, support head, extend back over the roller","Move to 3–4 positions up the mid-back — never place roller on the lower back"],"vid":"thoracic+extension+foam+roller+mobility"}
+    ]},
+    '3':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Band dislocates","rx":"2×10","sets":0,"rest":0,"cues":["Wide grip on band, pass overhead and behind — keep arms straight throughout","Adjust grip width until the movement is smooth — never force the range"],"vid":"band+dislocates+shoulder+mobility"},
+      {"name":"Cross body shoulder stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Pull one arm across the chest, press just above the elbow to deepen","Keep shoulder down away from your ear — feel the posterior deltoid release"],"vid":"cross+body+shoulder+stretch+mobility"},
+      {"name":"Sleeper stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Lie on your side, shoulder at 90° — gently press the forearm toward the floor","Targets the posterior rotator cuff — essential shoulder health maintenance"],"vid":"sleeper+stretch+rotator+cuff+mobility"}
+    ]}
+  },
+  B:{
+    '1':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Hip 90/90 switch","rx":"2×10 each side","sets":0,"rest":0,"cues":["Sit on floor, both knees at 90° — rotate from side to side keeping chest tall","Each position opens internal or external rotation — breathe into the tight side"],"vid":"hip+90+90+mobility+switch"},
+      {"name":"Hip flexor stretch kneeling","rx":"2×30s each side","sets":0,"rest":0,"cues":["Back knee on floor, tuck tailbone under — this doubles the hip flexor stretch","Without the pelvic tuck you're mostly stretching quad, not hip flexor"],"vid":"kneeling+hip+flexor+stretch+mobility"},
+      {"name":"Ankle mobility wall rocks","rx":"2×10 each side","sets":0,"rest":0,"cues":["Foot flat on floor close to the wall — drive knee over toes toward the wall","Better ankle mobility means deeper squats and safer landings — do this daily"],"vid":"ankle+mobility+wall+rocks"}
+    ]},
+    '2':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Deep squat hold","rx":"2×30s","sets":0,"rest":0,"cues":["Heels flat, chest tall, arms inside knees — hold and breathe into the hips","Use a rig or doorframe for support if needed — gradually reduce over time"],"vid":"deep+squat+hold+mobility"},
+      {"name":"Lateral lunge with reach","rx":"8 each side","sets":0,"rest":0,"cues":["Step wide to the side, sit into one hip — reach arms forward for counterbalance","Feel the inner groin and adductors stretch — hold briefly at the bottom"],"vid":"lateral+lunge+reach+mobility"},
+      {"name":"Couch stretch","rx":"2×45s each side","sets":0,"rest":0,"cues":["Back foot elevated on bench or wall, front knee at 90° — keep torso tall","Squeeze the glute of the back leg to intensify the hip flexor stretch"],"vid":"couch+stretch+hip+flexor+quad+mobility"}
+    ]},
+    '3':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Spiderman lunge with rotation","rx":"5 each side","sets":0,"rest":0,"cues":["Deep lunge, drop same-side elbow to floor, then rotate top arm to ceiling","The best single-movement hip flexor and thoracic rotation combination"],"vid":"spiderman+lunge+rotation+mobility"},
+      {"name":"Calf stretch against wall","rx":"2×30s each side","sets":0,"rest":0,"cues":["Hands on wall, back leg straight — press heel into the floor firmly","Bent-knee version targets the soleus — do both for complete ankle range"],"vid":"calf+stretch+wall+ankle+mobility"},
+      {"name":"Seated butterfly stretch","rx":"2×30s","sets":0,"rest":0,"cues":["Sit with soles together, hands on feet — breathe and let knees sink toward the floor","Gentle elbow pressure on knees to deepen — never force the range"],"vid":"seated+butterfly+stretch+hip+groin+mobility"}
+    ]}
+  }
+},
+'2':{
+  A:{
+    '1':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Thoracic rotation open book","rx":"2×8 each side","sets":0,"rest":0,"cues":["Lie on side with hips stacked — rotate top arm and shoulder toward the floor","Rotation comes from mid-back, not neck — follow your hand with your eyes"],"vid":"thoracic+rotation+open+book+mobility"},
+      {"name":"Doorway chest opener","rx":"2×30s each side","sets":0,"rest":0,"cues":["Arm at 90° in the doorway, step forward — breathe into the chest stretch","Heavy pressing needs mobile pecs — vary arm height each rep to hit all fibers"],"vid":"doorway+chest+stretch+pec+opener"},
+      {"name":"Wall slides","rx":"2×10","sets":0,"rest":0,"cues":["Back of hands and forearms stay in contact with the wall throughout","Slide slowly up — feel the shoulder blades elevate and rotate fully"],"vid":"wall+slides+shoulder+mobility"}
+    ]},
+    '2':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Thread the needle","rx":"2×8 each side","sets":0,"rest":0,"cues":["Start on all fours — thread one arm under your body and follow your gaze, rotating from mid-back","Exhale as you thread through — hold at end range for a full breath"],"vid":"thread+the+needle+thoracic+rotation+mobility"},
+      {"name":"Overhead tricep and lat stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Reach one arm overhead, lean away from that side — feel the lat and tricep lengthen","Keep the opposite side grounded — don't let the hip flare out"],"vid":"overhead+lat+tricep+stretch+mobility"},
+      {"name":"Band dislocates","rx":"2×10","sets":0,"rest":0,"cues":["Wide grip on band, pass overhead and behind — keep arms straight throughout","Adjust grip width until the movement is smooth — never force the range"],"vid":"band+dislocates+shoulder+mobility"}
+    ]},
+    '3':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Thoracic extension over foam roller","rx":"2×5 positions","sets":0,"rest":0,"cues":["Place roller across mid-back, support head, extend back over the roller","Move to 3–4 positions up the mid-back — never place roller on the lower back"],"vid":"thoracic+extension+foam+roller+mobility"},
+      {"name":"Pec minor stretch on foam roller","rx":"2×30s","sets":0,"rest":0,"cues":["Lie on roller along the spine, arms at 90° and let them fall to the sides — breathe deeply","The pec minor pulls the shoulder forward — releasing it restores upright posture"],"vid":"pec+minor+stretch+foam+roller+mobility"},
+      {"name":"Cross body shoulder stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Pull one arm across the chest, press just above the elbow to deepen","Keep shoulder down away from your ear — feel the posterior deltoid release"],"vid":"cross+body+shoulder+stretch+mobility"}
+    ]}
+  },
+  B:{
+    '1':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Hip 90/90 switch","rx":"2×10 each side","sets":0,"rest":0,"cues":["Sit on floor, both knees at 90° — rotate from side to side keeping chest tall","Each position opens internal or external rotation — breathe into the tight side"],"vid":"hip+90+90+mobility+switch"},
+      {"name":"Pigeon pose or figure 4","rx":"2×45s each side","sets":0,"rest":0,"cues":["Lead hip on the ground, slide back leg out — breathe into the outer glute","If pigeon is too intense, do figure-4 on your back — same target, less pressure"],"vid":"pigeon+pose+figure+4+hip+opener+mobility"},
+      {"name":"Hip flexor stretch kneeling","rx":"2×30s each side","sets":0,"rest":0,"cues":["Back knee on floor, tuck tailbone under — this doubles the hip flexor stretch","Without the pelvic tuck you're mostly stretching quad, not hip flexor"],"vid":"kneeling+hip+flexor+stretch+mobility"}
+    ]},
+    '2':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Deep squat hold","rx":"2×30s","sets":0,"rest":0,"cues":["Heels flat, chest tall, arms inside knees — hold and breathe into the hips","Use a rig or doorframe for support if needed — gradually reduce over time"],"vid":"deep+squat+hold+mobility"},
+      {"name":"Couch stretch","rx":"2×45s each side","sets":0,"rest":0,"cues":["Back foot elevated on bench or wall, front knee at 90° — keep torso tall","Squeeze the glute of the back leg to intensify the hip flexor stretch"],"vid":"couch+stretch+hip+flexor+quad+mobility"},
+      {"name":"Lateral lunge with reach","rx":"8 each side","sets":0,"rest":0,"cues":["Step wide to the side, sit into one hip — reach arms forward for counterbalance","Feel the inner groin and adductors stretch — hold briefly at the bottom"],"vid":"lateral+lunge+reach+mobility"}
+    ]},
+    '3':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Spiderman lunge with rotation","rx":"5 each side","sets":0,"rest":0,"cues":["Deep lunge, drop same-side elbow to floor, then rotate top arm to ceiling","The best single-movement hip flexor and thoracic rotation combination"],"vid":"spiderman+lunge+rotation+mobility"},
+      {"name":"Calf stretch against wall","rx":"2×30s each side","sets":0,"rest":0,"cues":["Hands on wall, back leg straight — press heel into the floor firmly","Bent-knee version targets the soleus — do both for complete ankle range"],"vid":"calf+stretch+wall+ankle+mobility"},
+      {"name":"Seated butterfly stretch","rx":"2×30s","sets":0,"rest":0,"cues":["Sit with soles together, hands on feet — breathe and let knees sink toward the floor","Gentle elbow pressure on knees to deepen — never force the range"],"vid":"seated+butterfly+stretch+hip+groin+mobility"}
+    ]}
+  }
+},
+'3':{
+  A:{
+    '1':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Thread the needle","rx":"2×8 each side","sets":0,"rest":0,"cues":["Start on all fours — thread one arm under your body and follow your gaze, rotating from mid-back","Exhale as you thread through — hold at end range for a full breath"],"vid":"thread+the+needle+thoracic+rotation+mobility"},
+      {"name":"Thoracic rotation open book","rx":"2×8 each side","sets":0,"rest":0,"cues":["Lie on side with hips stacked — rotate top arm and shoulder toward the floor","Thoracic rotation is the foundation of the golf swing — earn it before every session"],"vid":"thoracic+rotation+open+book+mobility"},
+      {"name":"Overhead tricep and lat stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Reach one arm overhead, lean away from that side — feel the lat and tricep lengthen","A tight lat limits backswing range — release it here before the rotational work"],"vid":"overhead+lat+tricep+stretch+mobility"}
+    ]},
+    '2':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Wall slides","rx":"2×10","sets":0,"rest":0,"cues":["Back of hands and forearms stay in contact with the wall throughout","Builds the shoulder blade control the rotational pressing movements demand"],"vid":"wall+slides+shoulder+mobility"},
+      {"name":"Doorway chest opener","rx":"2×30s each side","sets":0,"rest":0,"cues":["Arm at 90° in the doorway, step forward — breathe into the chest stretch","Tight pecs restrict the backswing — open them before every Phase 3 session"],"vid":"doorway+chest+stretch+pec+opener"},
+      {"name":"Sleeper stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Lie on your side, shoulder at 90° — gently press the forearm toward the floor","Targets the posterior rotator cuff — essential shoulder health under rotational load"],"vid":"sleeper+stretch+rotator+cuff+mobility"}
+    ]},
+    '3':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Thoracic extension over foam roller","rx":"2×5 positions","sets":0,"rest":0,"cues":["Place roller across mid-back, support head, extend back over the roller","Mid-thoracic extension lets the trail shoulder turn fully on the backswing"],"vid":"thoracic+extension+foam+roller+mobility"},
+      {"name":"Cross body shoulder stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Pull one arm across the chest, press just above the elbow to deepen","Keep shoulder down away from your ear — feel the posterior deltoid release"],"vid":"cross+body+shoulder+stretch+mobility"},
+      {"name":"Band dislocates","rx":"2×10","sets":0,"rest":0,"cues":["Wide grip on band, pass overhead and behind — keep arms straight throughout","Primes the shoulder for the end-range positions in rotational pressing"],"vid":"band+dislocates+shoulder+mobility"}
+    ]}
+  },
+  B:{
+    '1':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Hip 90/90 switch","rx":"2×10 each side","sets":0,"rest":0,"cues":["Sit on floor, both knees at 90° — rotate from side to side keeping chest tall","The hip rotation in this drill is the exact motion your downswing demands"],"vid":"hip+90+90+mobility+switch"},
+      {"name":"Pigeon pose or figure 4","rx":"2×45s each side","sets":0,"rest":0,"cues":["Lead hip on the ground, slide back leg out — breathe into the outer glute","Hip mobility here directly translates to rotation through impact"],"vid":"pigeon+pose+figure+4+hip+opener+mobility"},
+      {"name":"Spiderman lunge with rotation","rx":"5 each side","sets":0,"rest":0,"cues":["Deep lunge, drop same-side elbow to floor, then rotate top arm to ceiling","Opens the hip and thoracic spine simultaneously — golf-specific prep in one move"],"vid":"spiderman+lunge+rotation+mobility"}
+    ]},
+    '2':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Hip flexor stretch kneeling","rx":"2×30s each side","sets":0,"rest":0,"cues":["Back knee on floor, tuck tailbone under — this doubles the hip flexor stretch","Tight hip flexors block hip turn — this directly improves your swing range"],"vid":"kneeling+hip+flexor+stretch+mobility"},
+      {"name":"Lateral lunge with reach","rx":"8 each side","sets":0,"rest":0,"cues":["Step wide to the side, sit into one hip — reach arms forward for counterbalance","Trains the lateral hip mobility needed for weight transfer in the swing"],"vid":"lateral+lunge+reach+mobility"},
+      {"name":"Deep squat hold","rx":"2×30s","sets":0,"rest":0,"cues":["Heels flat, chest tall, arms inside knees — hold and breathe into the hips","Full squat depth primes the hips and ankles for explosive lower body work"],"vid":"deep+squat+hold+mobility"}
+    ]},
+    '3':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Ankle mobility wall rocks","rx":"2×10 each side","sets":0,"rest":0,"cues":["Foot flat on floor close to the wall — drive knee over toes toward the wall","Ankle mobility affects weight transfer through impact — a surprisingly important link"],"vid":"ankle+mobility+wall+rocks"},
+      {"name":"Couch stretch","rx":"2×45s each side","sets":0,"rest":0,"cues":["Back foot elevated on bench or wall, front knee at 90° — keep torso tall","Squeeze the glute of the back leg to intensify the hip flexor stretch"],"vid":"couch+stretch+hip+flexor+quad+mobility"},
+      {"name":"Calf stretch against wall","rx":"2×30s each side","sets":0,"rest":0,"cues":["Hands on wall, back leg straight — press heel into the floor firmly","Bent-knee version targets the soleus — do both for complete ankle range"],"vid":"calf+stretch+wall+ankle+mobility"}
+    ]}
+  }
+},
+'4':{
+  A:{
+    '1':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Thoracic rotation open book","rx":"2×8 each side","sets":0,"rest":0,"cues":["Lie on side with hips stacked — rotate top arm and shoulder toward the floor","Explosive upper body work demands full thoracic rotation — earn it here"],"vid":"thoracic+rotation+open+book+mobility"},
+      {"name":"Cross body shoulder stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Pull one arm across the chest, press just above the elbow to deepen","Releases the posterior deltoid before explosive pressing and pulling"],"vid":"cross+body+shoulder+stretch+mobility"},
+      {"name":"Wall slides","rx":"2×10","sets":0,"rest":0,"cues":["Back of hands and forearms stay in contact with the wall throughout","Builds the shoulder blade stability that explosive movements demand"],"vid":"wall+slides+shoulder+mobility"}
+    ]},
+    '2':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Thread the needle","rx":"2×8 each side","sets":0,"rest":0,"cues":["Start on all fours — thread one arm under your body and follow your gaze, rotating from mid-back","Thoracic rotation unlocks the rotational power Phase 4 is built around"],"vid":"thread+the+needle+thoracic+rotation+mobility"},
+      {"name":"Doorway chest opener","rx":"2×30s each side","sets":0,"rest":0,"cues":["Arm at 90° in the doorway, step forward — breathe into the chest stretch","Tight pecs limit the explosive follow-through — open them first"],"vid":"doorway+chest+stretch+pec+opener"},
+      {"name":"Pec minor stretch on foam roller","rx":"2×30s","sets":0,"rest":0,"cues":["Lie on roller along the spine, arms at 90° and let them fall to the sides — breathe deeply","The pec minor pulls the shoulder forward — releasing it restores upright posture"],"vid":"pec+minor+stretch+foam+roller+mobility"}
+    ]},
+    '3':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Sleeper stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Lie on your side, shoulder at 90° — gently press the forearm toward the floor","Targets the posterior rotator cuff — essential shoulder health under explosive load"],"vid":"sleeper+stretch+rotator+cuff+mobility"},
+      {"name":"Overhead tricep and lat stretch","rx":"2×30s each side","sets":0,"rest":0,"cues":["Reach one arm overhead, lean away from that side — feel the lat and tricep lengthen","Lat tension limits the overhead position in explosive pressing — release it here"],"vid":"overhead+lat+tricep+stretch+mobility"},
+      {"name":"Thoracic extension over foam roller","rx":"2×5 positions","sets":0,"rest":0,"cues":["Place roller across mid-back, support head, extend back over the roller","Move to 3–4 positions up the mid-back — never place roller on the lower back"],"vid":"thoracic+extension+foam+roller+mobility"}
+    ]}
+  },
+  B:{
+    '1':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Hip 90/90 switch","rx":"2×10 each side","sets":0,"rest":0,"cues":["Sit on floor, both knees at 90° — rotate from side to side keeping chest tall","Hip rotation mobility is what separates a powerful swing from a compensated one"],"vid":"hip+90+90+mobility+switch"},
+      {"name":"Spiderman lunge with rotation","rx":"5 each side","sets":0,"rest":0,"cues":["Deep lunge, drop same-side elbow to floor, then rotate top arm to ceiling","The best prep movement for the explosive hip hinge and jump patterns ahead"],"vid":"spiderman+lunge+rotation+mobility"},
+      {"name":"Ankle mobility wall rocks","rx":"2×10 each side","sets":0,"rest":0,"cues":["Foot flat on floor close to the wall — drive knee over toes toward the wall","Ankle mobility limits force absorption during box jumps and plyometrics"],"vid":"ankle+mobility+wall+rocks"}
+    ]},
+    '2':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Hip flexor stretch kneeling","rx":"2×30s each side","sets":0,"rest":0,"cues":["Back knee on floor, tuck tailbone under — this doubles the hip flexor stretch","Hip mobility is critical for generating force through the ground in explosive work"],"vid":"kneeling+hip+flexor+stretch+mobility"},
+      {"name":"Pigeon pose or figure 4","rx":"2×45s each side","sets":0,"rest":0,"cues":["Lead hip on the ground, slide back leg out — breathe into the outer glute","Open hips allow maximum force transfer through the ground in explosive movements"],"vid":"pigeon+pose+figure+4+hip+opener+mobility"},
+      {"name":"Couch stretch","rx":"2×45s each side","sets":0,"rest":0,"cues":["Back foot elevated on bench or wall, front knee at 90° — keep torso tall","Squeeze the glute of the back leg to intensify the hip flexor stretch"],"vid":"couch+stretch+hip+flexor+quad+mobility"}
+    ]},
+    '3':{label:"Mobility block",mins:8,exercises:[
+      {"name":"Deep squat hold","rx":"2×30s","sets":0,"rest":0,"cues":["Heels flat, chest tall, arms inside knees — hold and breathe into the hips","Maximum hip and ankle range is required for the explosive loading positions ahead"],"vid":"deep+squat+hold+mobility"},
+      {"name":"Lateral lunge with reach","rx":"8 each side","sets":0,"rest":0,"cues":["Step wide to the side, sit into one hip — reach arms forward for counterbalance","Lateral hip mobility is critical for safe explosive landings and broad jumps"],"vid":"lateral+lunge+reach+mobility"},
+      {"name":"Seated butterfly stretch","rx":"2×30s","sets":0,"rest":0,"cues":["Sit with soles together, hands on feet — breathe and let knees sink toward the floor","Gentle elbow pressure on knees to deepen — never force the range"],"vid":"seated+butterfly+stretch+hip+groin+mobility"}
+    ]}
+  }
+}
+};
+
 // Returns full ordered sections for a given phase/week/day
 function getSections(phase, week, day){
   const allW1 = PHASES_W1[phase][day].sections;
-  if(week==='1') return allW1;
   const isShared = s=>{const l=s.label.toLowerCase();return l.includes('warm')||l.includes('mobil')||l.includes('conditioning')||l.includes('cool');};
   const warmup = allW1.filter(s=>s.label.toLowerCase().includes('warm'));
-  const mobility = allW1.filter(s=>s.label.toLowerCase().includes('mobil'));
   const conditioning = allW1.filter(s=>s.label.toLowerCase().includes('conditioning'));
   const cooldown = allW1.filter(s=>s.label.toLowerCase().includes('cool'));
+  const mobEntry = ((MOBILITY[phase]||{})[day]||{})[week];
+  const mobility = mobEntry ? [mobEntry] : allW1.filter(s=>s.label.toLowerCase().includes('mobil'));
+  if(week==='1'){
+    const mainSecs = allW1.filter(s=>!isShared(s));
+    return [...warmup, ...mainSecs, ...mobility, ...conditioning, ...cooldown];
+  }
   const weekData = ((PHASES_MAIN[phase]||{})[week]||{})[day];
   const mainSecs = weekData || allW1.filter(s=>!isShared(s));
   return [...warmup, ...mainSecs, ...mobility, ...conditioning, ...cooldown];
@@ -1193,10 +1373,20 @@ function setProgUser(u,btn){progUser=u;document.getElementById('prog-you-btn').c
 function setNutUser(u,btn){nutUser=u;document.getElementById('nut-you-btn').className='toggle-btn'+(u==='you'?' you-on':'');document.getElementById('nut-dad-btn').className='toggle-btn'+(u==='dad'?' dad-on':'');refreshNutrition();}
 function setNutDay(d,btn){nutDay=d;document.getElementById('nut-train-btn').className='toggle-btn'+(d==='train'?' active':'');document.getElementById('nut-rest-btn').className='toggle-btn'+(d==='rest'?' active':'');refreshNutrition();}
 
+function getNextSession(phase,week,day){
+  if(day==='A')return{phase,week,day:'B'};
+  const w=parseInt(week),p=parseInt(phase);
+  if(w<3)return{phase,week:String(w+1),day:'A'};
+  if(p>=4)return{phase:'1',week:'1',day:'A'};
+  return{phase:String(p+1),week:'1',day:'A'};
+}
+
 function refreshHome(){
   const u=homeUser, s=state[u];
   document.getElementById('h-streak').textContent=s.streak;
   document.getElementById('h-sessions').textContent=s.sessions;
+  const next=(s.lastPhase)?getNextSession(s.lastPhase,s.lastWeek,s.lastDay):{phase:'1',week:'1',day:'A'};
+  document.getElementById('home-next-session').textContent='Ph '+next.phase+' W'+next.week+' · Day '+next.day+(next.day==='A'?' — Upper':' — Lower');
   const today=new Date().toLocaleDateString();
   const t=(s.foods||[]).filter(f=>f.date===today).reduce((a,f)=>({cal:a.cal+(f.cal||0),prot:a.prot+(f.prot||0),carb:a.carb+(f.carb||0),fat:a.fat+(f.fat||0)}),{cal:0,prot:0,carb:0,fat:0});
   document.getElementById('snap-cal').textContent=Math.round(t.cal);
@@ -1222,6 +1412,38 @@ function loadSetVal(phase,week,day,exName,setNum,field){
   const ts=localStorage.getItem(k+'_ts');
   if(ts&&Date.now()-parseInt(ts)>7*24*60*60*1000){localStorage.removeItem(k);localStorage.removeItem(k+'_ts');return '';}
   return localStorage.getItem(k)||'';
+}
+
+// Exercise history helpers
+function exKey(exName){return exName.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');}
+
+function getLastSession(exName){
+  try{const log=JSON.parse(localStorage.getItem('exerciseLog_'+exKey(exName))||'[]');return log.length?log[0]:null;}catch(e){return null;}
+}
+
+function saveSessionHistory(){
+  const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  getSections(currentPhase,currentWeek,currentDay).forEach(sec=>{
+    sec.exercises.forEach(ex=>{
+      if(getExType(ex,sec.label)!=='weighted')return;
+      const sets=[];
+      for(let i=1;i<=ex.sets;i++){
+        const w=loadSetVal(currentPhase,currentWeek,currentDay,ex.name,i,'w');
+        const r=loadSetVal(currentPhase,currentWeek,currentDay,ex.name,i,'r');
+        const rpe=loadSetVal(currentPhase,currentWeek,currentDay,ex.name,i,'rpe');
+        if(w||r)sets.push({w:w||'',r:r||'',rpe:rpe||''});
+      }
+      if(!sets.length)return;
+      const k=exKey(ex.name);
+      const logKey='exerciseLog_'+k;
+      let log=[];
+      try{log=JSON.parse(localStorage.getItem(logKey)||'[]');}catch(e){}
+      log=log.filter(e=>e.date!==today);
+      log.unshift({date:today,sets});
+      if(log.length>10)log=log.slice(0,10);
+      localStorage.setItem(logKey,JSON.stringify(log));
+    });
+  });
 }
 
 // Exercise type classifier
@@ -1303,11 +1525,17 @@ function renderWorkout(){
   allEx=flatEx(currentDay);
   let html='';
   getSections(currentPhase,currentWeek,currentDay).forEach(sec=>{
+    const isSuperset=sec.label.toLowerCase().includes('superset');
+    const secIndices=sec.exercises.map(ex=>allEx.findIndex(e=>e.name===ex.name&&e.secLabel===sec.label)).filter(i=>i>=0);
+    const secFirst=secIndices.length?Math.min(...secIndices):-1;
+    const secLast=secIndices.length?Math.max(...secIndices):-1;
+    const secDone=isSuperset&&sessionActive&&secLast>=0&&currentExIdx>secLast;
+    const secActive=isSuperset&&sessionActive&&secFirst>=0&&currentExIdx>=secFirst&&currentExIdx<=secLast;
     html+=`<div class="section-label" style="display:flex;justify-content:space-between;align-items:center">${sec.label}<span class="pill pill-blue">${sec.mins} min</span></div>`;
     sec.exercises.forEach(ex=>{
       const gIdx=allEx.findIndex(e=>e.name===ex.name&&e.secLabel===sec.label);
-      const isDone=sessionActive&&gIdx<currentExIdx;
-      const isActive=sessionActive&&gIdx===currentExIdx;
+      const isDone=isSuperset?secDone:(sessionActive&&gIdx<currentExIdx);
+      const isActive=isSuperset?secActive:(sessionActive&&gIdx===currentExIdx);
       const exType=getExType(ex,sec.label);
       html+=`<div class="ex-block${isActive?' active-ex':isDone?' done-ex':''}" id="exb-${gIdx}">
         <div class="ex-header" onclick="toggleExBody(${gIdx})">
@@ -1320,11 +1548,15 @@ function renderWorkout(){
           <div class="ex-cue">${ex.cues[1]}</div>
           <a class="video-link" href="https://www.youtube.com/results?search_query=${ex.vid}" target="_blank"><i class="ti ti-player-play" aria-hidden="true" style="font-size:12px"></i> Watch tutorial</a>
           ${renderExBody(gIdx,ex,sec.label,exType)}
-          ${isActive&&ex.rest>0&&exType==='weighted'?`<button class="btn btn-amber" style="margin-top:8px" onclick="launchRest(${ex.rest})"><i class="ti ti-clock" aria-hidden="true"></i> Rest ${fmtRest(ex.rest)}</button>`:''}
-          ${isActive?`<button class="btn btn-green" style="margin-top:6px" onclick="advanceEx()"><i class="ti ti-arrow-right" aria-hidden="true"></i> Done — next exercise</button>`:''}
+          ${!isSuperset&&isActive&&ex.rest>0&&exType==='weighted'?`<button class="btn btn-amber" style="margin-top:8px" onclick="launchRest(${ex.rest})"><i class="ti ti-clock" aria-hidden="true"></i> Rest ${fmtRest(ex.rest)}</button>`:''}
+          ${!isSuperset&&isActive?`<button class="btn btn-green" style="margin-top:6px" onclick="advanceEx()"><i class="ti ti-arrow-right" aria-hidden="true"></i> Done — next exercise</button>`:''}
         </div>
       </div>`;
     });
+    if(isSuperset&&secActive){
+      const restSecs=sec.exercises[sec.exercises.length-1].rest||90;
+      html+=`<button class="btn superset-done-btn" onclick="supersetDone(${secFirst},${sec.exercises.length},${restSecs})"><i class="ti ti-check" aria-hidden="true"></i> Superset done — rest ${fmtRest(restSecs)}</button>`;
+    }
   });
   document.getElementById('workout-content').innerHTML=html;
   if(sessionActive&&currentExIdx<allEx.length){
@@ -1366,7 +1598,26 @@ function renderExBody(idx,ex,secLabel,exType){
   }
   // weighted — with persistence
   const es=exName.replace(/'/g,"\\'");
-  let h=`<div style="margin-top:10px"><div class="section-label">Log sets</div><div class="set-grid"><span class="set-lbl">Set</span><span class="set-lbl">Weight</span><span class="set-lbl">Reps</span><span class="set-lbl">RPE <span class="rpe-info" onclick="openRpePopup(event)">i</span></span><span></span></div>`;
+  const lastSess=getLastSession(exName);
+  let lastSessHtml='';
+  if(lastSess){
+    const setsStr=lastSess.sets.map(s=>[s.w?s.w+'lb':'',s.r?'×'+s.r:'',s.rpe?'RPE '+s.rpe:''].filter(Boolean).join(' ')).join(' / ');
+    const lastSet=lastSess.sets[lastSess.sets.length-1];
+    const lastRpe=lastSet?parseFloat(lastSet.rpe):NaN;
+    let tip='';
+    if(!isNaN(lastRpe)){
+      if(lastRpe<=6)tip='Consider adding 5lb today';
+      else if(lastRpe<=8)tip='Stay at same weight or add 2.5–5lb if feeling strong';
+      else tip='Stay at same weight — focus on form and consistency';
+    }
+    lastSessHtml=`<div style="margin-top:8px;padding:8px 10px;background:var(--gray-bg);border-radius:var(--radius-sm);font-size:12px">
+      <span style="font-weight:600;color:var(--text-2)">Last session (${lastSess.date}):</span> <span style="color:var(--text-2)">${setsStr}</span>
+      ${tip?`<div style="margin-top:3px;color:var(--blue-dark);font-size:11px">→ ${tip}</div>`:''}
+    </div>`;
+  } else {
+    lastSessHtml='<div style="margin-top:8px;padding:7px 10px;background:var(--gray-bg);border-radius:var(--radius-sm);font-size:11px;color:var(--text-3)">No previous data — log this session to start tracking</div>';
+  }
+  let h=`<div style="margin-top:10px">${lastSessHtml}<div class="section-label" style="margin-top:10px">Log sets</div><div class="set-grid"><span class="set-lbl">Set</span><span class="set-lbl">Weight</span><span class="set-lbl">Reps</span><span class="set-lbl">RPE <span class="rpe-info" onclick="openRpePopup(event)">i</span></span><span></span></div>`;
   for(let i=1;i<=ex.sets;i++){
     const w=loadSetVal(currentPhase,currentWeek,currentDay,exName,i,'w');
     const r=loadSetVal(currentPhase,currentWeek,currentDay,exName,i,'r');
@@ -1401,13 +1652,7 @@ function toggleSession(){
     document.getElementById('start-sess-btn').className='btn btn-amber';
     renderWorkout();
   }else{
-    sessionActive=false;clearInterval(sessionInterval);
-    const u=homeUser;state[u].sessions++;state[u].streak++;
-    saveState();
-    document.getElementById('session-bar').style.display='none';
-    document.getElementById('start-sess-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start session';
-    document.getElementById('start-sess-btn').className='btn btn-green';
-    renderWorkout();refreshHome();
+    endSession();
   }
 }
 
@@ -1420,7 +1665,51 @@ function tickSession(){
   document.getElementById('sess-ex-num').textContent=(currentExIdx+1)+'/'+allEx.length;
 }
 
-function advanceEx(){if(currentExIdx<allEx.length-1){currentExIdx++;renderWorkout();}else{toggleSession();}}
+function advanceEx(){if(currentExIdx<allEx.length-1){currentExIdx++;renderWorkout();}else{endSession();}}
+
+function supersetDone(firstIdx,count,restSecs){
+  currentExIdx=firstIdx+count;
+  if(restSecs>0)startFloatTimer(restSecs);
+  if(currentExIdx>=allEx.length){endSession();}else{renderWorkout();}
+}
+
+function endSession(){
+  const elapsed=Date.now()-sessionStart;
+  saveSessionHistory();
+  sessionActive=false;clearInterval(sessionInterval);
+  const u=homeUser;
+  state[u].sessions++;state[u].streak++;
+  state[u].lastPhase=currentPhase;state[u].lastWeek=currentWeek;state[u].lastDay=currentDay;
+  saveState();
+  document.getElementById('session-bar').style.display='none';
+  document.getElementById('start-sess-btn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Start session';
+  document.getElementById('start-sess-btn').className='btn btn-green';
+  renderWorkout();refreshHome();
+  showCompletionModal(elapsed);
+}
+
+function showCompletionModal(elapsedMs){
+  const secs=Math.floor((elapsedMs||0)/1000);
+  const m=Math.floor(secs/60),s=secs%60;
+  const timeStr=m+'m'+(s?' '+s+'s':'');
+  const next=getNextSession(currentPhase,currentWeek,currentDay);
+  const phaseNames={'1':'Foundation','2':'Strength','3':'Golf Power','4':'Golf Peak'};
+  const u=homeUser;
+  document.getElementById('modal-title').textContent='Day '+currentDay+' complete!';
+  document.getElementById('modal-motive').textContent=currentDay==='A'?'Upper body done — rest up and come back strong!':'Lower body crushed — another session in the books!';
+  document.getElementById('modal-summary').innerHTML=
+    '<div style="background:var(--card-bg);border-radius:var(--radius-sm);padding:12px;text-align:center"><div style="font-size:11px;color:var(--text-2)">Phase</div><div style="font-size:16px;font-weight:700">'+currentPhase+' · '+phaseNames[currentPhase]+'</div></div>'+
+    '<div style="background:var(--card-bg);border-radius:var(--radius-sm);padding:12px;text-align:center"><div style="font-size:11px;color:var(--text-2)">Duration</div><div style="font-size:16px;font-weight:700">'+timeStr+'</div></div>'+
+    '<div style="background:var(--card-bg);border-radius:var(--radius-sm);padding:12px;text-align:center"><div style="font-size:11px;color:var(--text-2)">Week</div><div style="font-size:16px;font-weight:700">Week '+currentWeek+'</div></div>'+
+    '<div style="background:var(--card-bg);border-radius:var(--radius-sm);padding:12px;text-align:center"><div style="font-size:11px;color:var(--text-2)">Sessions</div><div style="font-size:16px;font-weight:700">'+state[u].sessions+'/48</div></div>';
+  document.getElementById('modal-next').textContent='Phase '+next.phase+' · Week '+next.week+' · Day '+next.day+' — '+(next.day==='A'?'Upper':'Lower');
+  document.getElementById('completion-modal').classList.add('show');
+}
+
+function dismissCompletionModal(){
+  document.getElementById('completion-modal').classList.remove('show');
+  refreshHome();
+}
 
 function launchRest(secs){startFloatTimer(secs);}
 
@@ -1434,6 +1723,38 @@ function refreshProgress(){
   buildStreakDots(u,'streak-dots');
   renderBWEntries();
   renderLiftBests();
+  renderLiftHistory();
+}
+
+function renderLiftHistory(){
+  const el=document.getElementById('lift-history');if(!el)return;
+  let html='';
+  LIFTS_LIST.forEach(lift=>{
+    let log=[];
+    try{log=JSON.parse(localStorage.getItem('exerciseLog_'+exKey(lift))||'[]');}catch(e){}
+    if(!log.length)return;
+    html+=`<div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${lift}</div>
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="font-size:10px;color:var(--text-3)">
+          <td style="padding:2px 6px 4px">Date</td>
+          <td style="padding:2px 6px 4px;text-align:center">Weight</td>
+          <td style="padding:2px 6px 4px;text-align:center">Reps</td>
+          <td style="padding:2px 6px 4px;text-align:center">RPE</td>
+        </tr>
+        ${log.slice(0,5).map(entry=>{
+          const best=entry.sets.reduce((b,s)=>parseFloat(s.w||0)>=parseFloat(b.w||0)?s:b,entry.sets[0]||{w:'',r:'',rpe:''});
+          return `<tr style="font-size:12px;border-top:0.5px solid var(--border)">
+            <td style="padding:5px 6px;color:var(--text-2)">${entry.date}</td>
+            <td style="padding:5px 6px;text-align:center;font-weight:600">${best.w?best.w+'lb':'—'}</td>
+            <td style="padding:5px 6px;text-align:center">${best.r||'—'}</td>
+            <td style="padding:5px 6px;text-align:center">${best.rpe||'—'}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>`;
+  });
+  el.innerHTML=html||'<div style="font-size:13px;color:var(--text-2);text-align:center;padding:10px 0">Log sessions to see lift history here</div>';
 }
 
 function buildStreakDots(u,elId){
@@ -1462,7 +1783,7 @@ function renderLiftBests(){
   document.getElementById('lift-bests').innerHTML=LIFTS_LIST.map(l=>`
     <div class="lift-row">
       <div style="flex:1"><div style="font-size:13px;font-weight:500">${l}</div></div>
-      <input class="lift-inp" type="number" placeholder="— lb" value="${bests[l]||''}" onchange="updateLiftBest('${l}',this.value)">
+      <input class="lift-inp" type="number" placeholder="— lb" value="${bests[l]||''}" data-lift="${l}" oninput="updateLiftBest('${l}',this.value)">
     </div>`).join('');
 }
 
@@ -1685,7 +2006,7 @@ function tickTimer(){
     const disp=document.getElementById('timer-disp');
     disp.style.animation='timerFlash 0.5s ease-in-out infinite';
     const banner=document.getElementById('rest-complete-banner');
-    if(banner){banner.style.display='block';setTimeout(()=>dismissRestBanner(),3000);}
+    if(banner){banner.style.display='block';setTimeout(()=>dismissRestBanner(),4000);}
     try{if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);}catch(e){}
     try{beepTimer();}catch(e){}
   }
@@ -1699,6 +2020,9 @@ function dismissRestBanner(){
 }
 
 let audioCtx=null;
+document.addEventListener('touchstart',function(){
+  try{if(!audioCtx){audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}}catch(e){}
+},{once:true});
 function beepTimer(){
   if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
   for(let i=0;i<3;i++){
@@ -1713,6 +2037,9 @@ function beepTimer(){
 
 // Resync timer when app returns from background / screen unlock
 document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    document.querySelectorAll('.lift-inp').forEach(inp=>{const l=inp.dataset.lift;if(l&&inp.value)updateLiftBest(l,inp.value);});
+  }
   if(!document.hidden&&timerRunning){tickTimer();}
   if(!document.hidden&&sessionActive){tickSession();}
 });
